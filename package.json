@@ -8,7 +8,7 @@
     "clean": "rm build/*",
     "dev": "ts-node index.ts ITestForm.ts"
   },
-  "author": "",
+  "author": "Alex Lurvey",
   "license": "ISC",
   "dependencies": {
     "@thi.ng/defmulti": "^1.2.11",

@@ -3,23 +3,32 @@ import { arrayZipper, Location } from '@thi.ng/zipper';
 import { appendFileSync } from 'fs';
 import { AST, Tree, Field, Interface, Node, NodeField } from './api';
 import { setFn } from './templates';
-import { isNode } from './utils';
+import { isNode, upperCaseFirstChar } from './utils';
 
 const NESTED = 'nested';
 const LEAF = 'leaf';
 
-const buildLeafPaths = defmulti<AST | Node>(([ _name, type ]: Field, interfaces: object, _path: string[]) => {
+const walk = (zipper: Location<Node | AST | (Node | AST)[]>, onNode) => {
+    if (!zipper || !zipper.node)
+        return;
+
+    if (isNode(zipper.node))
+        onNode(zipper.node)
+
+    walk(zipper.next, onNode)
+}
+
+const buildLeafPaths = defmulti<AST | Node>(([ _name, type ]: Field, interfaces: object, _path: Node[]) => {
     return interfaces[type] ? NESTED : LEAF;
 })
-buildLeafPaths.add(NESTED, ([ name, type ]: Field, interfaces: object, path: string[]) => {
-    const p = path.concat(name);
+buildLeafPaths.add(NESTED, ([ name, type ]: Field, interfaces: object, path: Node[]) => {
     const isArray = type.endsWith('[]');
-    const node = { name, type, isArray, path: p }
-    return [ node, interfaces[type].map(f => buildLeafPaths(f, interfaces, p)) ];
+    const node = { name, type, isArray, path };
+    return [ node, interfaces[type].map(f => buildLeafPaths(f, interfaces, path.concat(node))) ];
 })
-buildLeafPaths.add(LEAF, ([ name, type ]: Field, _interfaces: object, path: string[]) => {
+buildLeafPaths.add(LEAF, ([ name, type ]: Field, _interfaces: object, path: Node[]) => {
     const isArray = type.endsWith('[]');
-    return { name, type, isArray, path: path.concat(name) };
+    return { name, type, isArray, path };
 })
 
 export const buildAst = (tree: Tree): AST[] => {
@@ -36,26 +45,42 @@ export const buildAst = (tree: Tree): AST[] => {
     return asts;
 }
 
-const walk = (zipper: Location<Node | AST | (Node | AST)[]>, onNode) => {
-    if (!zipper || !zipper.node)
-        return
-    
-    if (isNode(zipper.node))
-        onNode(zipper.node)
-
-    walk(zipper.next, onNode)
-}
-
-export const importsForFile = (ast: NodeField[], interfaceNames: string[]) => {
+export const importsForFile = (ast: NodeField[], interfaceNames: string[]): string[] => {
     const zipper = arrayZipper(ast);
-    const result = []
+    const result: string[] = [];
     const onNodeVisit = (node: Node) => interfaceNames.indexOf(node.type) !== -1 && result.push(node.type);
     walk(zipper.next, onNodeVisit);
     return Array.from(new Set(result));
 }
 
+const setNameXform = (typeCountsCtx: object) => (acc: string, node: Node) => {
+    // loop through a nodes path, appending each parents name if there is more than one type of it used in the entire form.
+    if (typeCountsCtx[node.type] > 1) {
+        acc += upperCaseFirstChar(node.name);
+    }
+    return acc;
+}
+
 export const writeSimpleSettersToFile = (ast: NodeField[], file: string, intfc: string) => {
     const zipper = arrayZipper(ast);
-    const onNodeVisit = (node: Node) => appendFileSync(file, setFn(node as Node, intfc));
+    const typeCounts = getTypeCounts(ast);
+    const fnNameForNode = (node: Node): string => {
+        const parents = node.path.reduce(setNameXform(typeCounts), '');
+        return parents.concat(upperCaseFirstChar(node.name));
+    }
+    const onNodeVisit = (node: Node) => {
+        appendFileSync(file, setFn(node as Node, intfc, fnNameForNode(node)));
+    }
     walk(zipper.next, onNodeVisit)
+}
+
+export const getTypeCounts = (ast: NodeField[]) => {
+    const zipper = arrayZipper(ast);
+    const allTypes: string[] = [];
+    const onNodeVisit = (node: Node) => allTypes.push(node.type);
+    walk(zipper.next, onNodeVisit);
+    return allTypes.reduce((acc, type) => {
+        acc[type] === undefined ? (acc[type] = 1) : acc[type]++;
+        return acc;
+    }, {})
 }

@@ -1,5 +1,6 @@
 export interface Form {
     person: Person;
+    secondPerson: Person;
 }
 
 export type Person = {

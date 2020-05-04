@@ -5,7 +5,7 @@ export type Tree = Interface[];
 export type Node = {
     type: string;
     name: string;
-    path: string[];
+    path: Node[];
     isArray: boolean;
 }
 export type NodeField = Node | AST;

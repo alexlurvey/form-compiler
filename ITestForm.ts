@@ -7,6 +7,7 @@ export type Person = {
     firstName: string;
     lastName: string;
     address: Address;
+    interests: string[];
 }
 
 export type Address = {

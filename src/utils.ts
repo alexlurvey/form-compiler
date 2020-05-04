@@ -8,3 +8,5 @@ export const isNode = (node: AST | Node | NodeField[]) => typeof node === 'objec
 export const isPrimitive = (node: Node) => primitives.has(node.type);
 
 export const upperCaseFirstChar = (str: string) => str.length ? str[0].toUpperCase() + str.slice(1) : str;
+
+export const isArrayType = (str: string) => str.endsWith('[]') || str.startsWith('Array<');

@@ -3,7 +3,7 @@ import { arrayZipper, Location } from '@thi.ng/zipper';
 import { appendFileSync } from 'fs';
 import { AST, Tree, Field, Interface, Node, NodeField } from './api';
 import { setFn } from './templates';
-import { isNode, upperCaseFirstChar } from './utils';
+import { isArrayType, isNode, upperCaseFirstChar } from './utils';
 
 const NESTED = 'nested';
 const LEAF = 'leaf';
@@ -22,13 +22,11 @@ const buildLeafPaths = defmulti<AST | Node>(([ _name, type ]: Field, interfaces:
     return interfaces[type] ? NESTED : LEAF;
 })
 buildLeafPaths.add(NESTED, ([ name, type ]: Field, interfaces: object, path: Node[]) => {
-    const isArray = type.endsWith('[]');
-    const node = { name, type, isArray, path };
+    const node = { name, type, isArray: isArrayType(type), path };
     return [ node, interfaces[type].map(f => buildLeafPaths(f, interfaces, path.concat(node))) ];
 })
 buildLeafPaths.add(LEAF, ([ name, type ]: Field, _interfaces: object, path: Node[]) => {
-    const isArray = type.endsWith('[]');
-    return { name, type, isArray, path };
+    return { name, type, isArray: isArrayType(type), path };
 })
 
 export const buildAst = (tree: Tree): AST[] => {
@@ -64,12 +62,12 @@ const setNameXform = (typeCountsCtx: object) => (acc: string, node: Node) => {
 export const writeSimpleSettersToFile = (ast: NodeField[], file: string, intfc: string) => {
     const zipper = arrayZipper(ast);
     const typeCounts = getTypeCounts(ast);
-    const fnNameForNode = (node: Node): string => {
-        const parents = node.path.reduce(setNameXform(typeCounts), '');
+    const fnNameForNode = (node: Node, pre = ''): string => {
+        const parents = node.path.reduce(setNameXform(typeCounts), pre);
         return parents.concat(upperCaseFirstChar(node.name));
     }
     const onNodeVisit = (node: Node) => {
-        appendFileSync(file, setFn(node as Node, intfc, fnNameForNode(node)));
+        appendFileSync(file, setFn(node as Node, intfc, fnNameForNode(node, 'set')));
     }
     walk(zipper.next, onNodeVisit)
 }

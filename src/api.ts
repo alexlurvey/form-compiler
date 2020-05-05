@@ -10,7 +10,3 @@ export type Node = {
 }
 export type NodeField = Node | AST;
 export type AST = [ Node, NodeField[] ]
-
-export interface IObjectOf<T> {
-    [key: string]: T;
-}

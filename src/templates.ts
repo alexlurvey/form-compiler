@@ -45,3 +45,12 @@ export const importStatement = (imports: string[], filename: string, levelFromRo
 export const importThingPaths = "import * as paths from '@thi.ng/paths';\n";
 export const importThingRstream = "import { stream } from '@thi.ng/rstream';\n";
 export const initialComment = '// This file is auto-generated\n';
+
+export const buildStreamObj = (properties: [ string, string ][]) => {
+    let result = 'export const streams = {\n';
+    properties.forEach(([ name, type ]) => {
+        result += `\t${name}: stream<${type}>(),\n`
+    })
+    result += '};\n';
+    return result;
+}

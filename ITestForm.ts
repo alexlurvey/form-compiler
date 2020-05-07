@@ -1,4 +1,5 @@
 export interface Form {
+    name: string;
     person: Person;
     secondPerson: Person;
 }

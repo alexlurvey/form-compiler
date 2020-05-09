@@ -4,7 +4,7 @@ import { appendFileSync, existsSync, mkdirSync } from 'fs';
 import { AST, IBaseFileContext, IIndexFileContext, IPathFileContext, IStreamFileContext } from './api';
 import { pathsXform, streamsXform } from './ast-transforms';
 import { importThingPaths, importThingRstream, importStatement, buildStreamObj, syncedStreams, buildStreamGetters, buildStreamSetters } from './templates';
-import { isObjectNode, isStreamFileContext, isPathFileContext, isIndexFileContext, lowercaseFirstChar } from './utils';
+import { isObjectNode, isStreamFileContext, isHooksFileContext, isPathFileContext, isIndexFileContext, lowercaseFirstChar, uppercaseFirstChar, isArrayType } from './utils';
 
 export const buildFileContexts = (buildpath: string, schemaFilename: string, baseInterface: string = null) => {
     return (acc: object[], x: AST) => {
@@ -86,7 +86,35 @@ const writeIndexFile = (ctx: IIndexFileContext) => {
     appendFileSync(fullpath, syncedStream);
 }
 
+const hookForStream = ([ name, type ]: [string, string]) => {
+    const fn = `export const use${uppercaseFirstChar(name)} = (): [ ${type}, (x: ${type}) => void ] => {\n`;
+    const state = `\tconst [ value, setValue ] = useState<${type}>(() => streams.${name}.deref());\n\n`;
+    const fx = `\tuseEffect(() => {
+        const sub = streams.${name}.subscribe(sideEffect((val: ${type}) => setValue(val)));
+        return () => sub.done();
+    }, [])\n\n`;
+    const cb = `\tconst setter = useCallback((val: ${type}) => {
+        set${uppercaseFirstChar(name)}(val);
+    }, [])\n\n`
+    const ret = `\treturn [ value, setter ];\n`;
+    return `${fn}${state}${fx}${cb}${ret}}`;
+}
+
+const writeHooksFile = (ctx: IStreamFileContext) => {
+    const fullpath = `${ctx.filepath}/${ctx.filename}`;
+    const streamImports = Array.from(ctx.localImports).concat(ctx.streams.map(([ name, _ ]) => {
+        return `set${uppercaseFirstChar(name)}`;
+    }))
+    appendFileSync(fullpath, ctx.libraryImports.join('\n'));
+    appendFileSync(fullpath, importStatement(streamImports, 'streams').concat('\n\n'));
+    appendFileSync(fullpath, ctx.streams.map(hookForStream).join('\n\n'))
+}
+
 export const writeToFile = defmulti(ctx => {
+    // TODO: change context checks
+    if (isHooksFileContext(ctx)) {
+        return 'hooks';
+    }
     if (isPathFileContext(ctx)) {
         return 'paths';
     }
@@ -101,3 +129,4 @@ export const writeToFile = defmulti(ctx => {
 writeToFile.add('paths', writePathFile);
 writeToFile.add('streams', writeStreamFile);
 writeToFile.add('index', writeIndexFile);
+writeToFile.add('hooks', writeHooksFile);

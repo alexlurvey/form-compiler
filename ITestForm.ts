@@ -1,5 +1,7 @@
 export interface Form {
     name: string;
+    num: number;
+    bool: boolean;
     person: Person;
     secondPerson: Person;
 }

@@ -20,9 +20,10 @@ if (!inputfile) {
 } else if (!existsSync(inputfile)) {
     console.error(`${inputfile} doesn't exist`);
 } else {
+    const outdir = process.argv.length > 3 ? process.argv[3] : 'build'
     const [ schemaFilename, extension ] = inputfile.split('.');
     const schemaPath = __dirname + '/' + schemaFilename + '.' + extension;
-    const buildPath = __dirname + '/build';
+    const buildPath = __dirname + '/' + outdir;
 
     const schema = readFileSync(schemaPath, 'utf8');
     const ctx = defContext(schema, { debug: false });
@@ -60,4 +61,18 @@ if (!inputfile) {
     })
 
     indexfiles.forEach(ctx => writeToFile(ctx));
+
+    const hookfiles = streamfiles.map((ctx: IStreamFileContext) => {
+        return <IStreamFileContext>{
+            ...ctx,
+            filename: 'hooks.ts',
+            localImports: new Set([ 'streams' ]),
+            libraryImports: [
+                "import { sideEffect } from '@thi.ng/transducers';",
+                "import { useCallback, useEffect, useState } from 'react';",
+            ],
+        }
+    })
+
+    hookfiles.forEach(ctx => writeToFile(ctx))
 }

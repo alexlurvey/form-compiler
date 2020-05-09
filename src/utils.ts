@@ -21,3 +21,4 @@ export const isArrayType = (str: string) => str.endsWith('[]') || str.startsWith
 export const isStreamFileContext = (q: IFileContext) => typeof q === 'object' && q.hasOwnProperty('streams');
 export const isPathFileContext = (q: IFileContext) => typeof q === 'object' && q.hasOwnProperty('getters');
 export const isIndexFileContext = (q: IFileContext) => typeof q === 'object' && q.hasOwnProperty('rootObjectProps');
+export const isHooksFileContext = (q: IFileContext) => typeof q === 'object' && q.filename === 'hooks.ts';

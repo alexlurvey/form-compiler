@@ -1,4 +1,4 @@
-import { AST, Node, NodeField } from './api';
+import { AST, IFileContext, Node, NodeField } from './api';
 
 const primitives = new Set(['string', 'boolean', 'number']); // TODO: https://www.typescriptlang.org/docs/handbook/basic-types.html
 
@@ -13,6 +13,11 @@ export const isObjectNode = (ast: AST | NodeField) => {
 
 export const isPrimitive = (node: Node) => primitives.has(node.type);
 
-export const upperCaseFirstChar = (str: string) => str.length ? str[0].toUpperCase() + str.slice(1) : str;
+export const uppercaseFirstChar = (str: string) => str.length ? str[0].toUpperCase() + str.slice(1) : str;
+export const lowercaseFirstChar = (str: string) => str.length ? str[0].toLocaleLowerCase() + str.slice(1) : str;
 
 export const isArrayType = (str: string) => str.endsWith('[]') || str.startsWith('Array<');
+
+export const isStreamFileContext = (q: IFileContext) => typeof q === 'object' && q.hasOwnProperty('streams');
+export const isPathFileContext = (q: IFileContext) => typeof q === 'object' && q.hasOwnProperty('getters');
+export const isIndexFileContext = (q: IFileContext) => typeof q === 'object' && q.hasOwnProperty('rootObjectProps');

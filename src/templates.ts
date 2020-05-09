@@ -1,5 +1,6 @@
 import { range } from '@thi.ng/transducers';
 import { Node } from './api';
+import { uppercaseFirstChar } from './utils';
 
 const setFnBody = (node: Node, rootType: string): string => {
     const generics = node.path.reduce((acc, n: Node) => (acc += `, "${n.name}"`), rootType).concat(`, "${node.name}"`);
@@ -43,7 +44,7 @@ export const importStatement = (imports: string[], filename: string, levelFromRo
 }
 
 export const importThingPaths = "import * as paths from '@thi.ng/paths';\n";
-export const importThingRstream = "import { stream } from '@thi.ng/rstream';\n";
+export const importThingRstream = "import { stream, sync } from '@thi.ng/rstream';\n";
 export const initialComment = '// This file is auto-generated\n';
 
 export const buildStreamObj = (properties: [ string, string ][]) => {
@@ -51,6 +52,31 @@ export const buildStreamObj = (properties: [ string, string ][]) => {
     properties.forEach(([ name, type ]) => {
         result += `\t${name}: stream<${type}>(),\n`
     })
-    result += '};\n';
+    result += '};\n\n';
     return result;
 }
+
+export const buildStreamGetters = (streams: [ string, string ][]) => {
+    let result: string[] = [];
+    streams.forEach(([ name, type ]) => {
+        const getter = `export function get${uppercaseFirstChar(name)} (): ${type} | undefined {
+    return streams.${name}.deref();
+}\n`;
+        result.push(getter)
+    });
+    return result;
+}
+
+export const buildStreamSetters = (streams: [ string, string ][]) => {
+    let result: string[] = [];
+    streams.forEach(([ name, type ]) => {
+        const setter = `export function set${uppercaseFirstChar(name)} (value: ${type}): void {
+    streams.${name}.next(value);
+}\n`;
+        result.push(setter);
+    })
+    return result;
+}
+
+export const syncedStreams = (varName) =>
+    `export const ${varName} = sync<any, any>({ src: streams });\n\n`;

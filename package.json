@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "build": "ts-node index.ts",
-    "clean": "rm -r build/*",
-    "dev": "ts-node index.ts ITestForm.ts"
+    "clean": "rm -rf build/*",
+    "dev": "yarn clean && ts-node index.ts ITestForm.ts"
   },
   "author": "Alex Lurvey",
   "license": "ISC",

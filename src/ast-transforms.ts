@@ -1,8 +1,8 @@
 import { defmulti } from '@thi.ng/defmulti';
-import { Reducer, Transducer, comp } from '@thi.ng/transducers';
-import { AST, Tree, Field, Interface, Node, NodeField } from './api';
+import { Reducer, Transducer, comp, filter } from '@thi.ng/transducers';
+import { AST, Tree, Field, Interface, Node, NodeField, IFileContext, IIndexFileContext, IStreamFileContext } from './api';
 import { getFn, setFn, initialComment } from './templates';
-import { isNode, isObjectNode, isArrayType, upperCaseFirstChar } from './utils';
+import { isNode, isObjectNode, isArrayType, uppercaseFirstChar, isStreamFileContext } from './utils';
 
 const NESTED = 'nested';
 const LEAF = 'leaf';
@@ -32,6 +32,7 @@ export const buildAst = (tree: Tree): AST[] => {
     return asts;
 }
 
+// AST Transducers
 const attachHeader: Transducer<NodeField, NodeField> =
     (rfn: Reducer<any, AST>): Reducer<any, NodeField> => {
         const reducer: Reducer<any, NodeField> = [
@@ -64,10 +65,10 @@ const gatherSetters: Transducer<NodeField, NodeField> = (rfn) =>
         (acc) => rfn[1](acc),
         (acc, x: NodeField) => {
             if (isNode(x)) {
-                acc.setters.push(setFn(x as Node, acc.baseInterface, upperCaseFirstChar((x as Node).name)));
+                acc.setters.push(setFn(x as Node, acc.baseInterface, uppercaseFirstChar((x as Node).name)));
             } else if (isObjectNode(x)) {
                 const node: Node = x[0];
-                acc.setters.push(setFn(node, acc.baseInterface, upperCaseFirstChar(node.name)))
+                acc.setters.push(setFn(node, acc.baseInterface, uppercaseFirstChar(node.name)))
             }
             return rfn[2](acc, x);
         }
@@ -79,10 +80,10 @@ const gatherGetters: Transducer<NodeField, NodeField> = (rfn) =>
         (acc) => rfn[1](acc),
         (acc, x: NodeField) => {
             if (isNode(x)) {
-                acc.getters.push(getFn(x as Node, acc.baseInterface, upperCaseFirstChar((x as Node).name)))
+                acc.getters.push(getFn(x as Node, acc.baseInterface, uppercaseFirstChar((x as Node).name)))
             } else if (isObjectNode(x)) {
                 const node: Node = x[0];
-                acc.getters.push(getFn(node, acc.baseInterface, upperCaseFirstChar(node.name)))
+                acc.getters.push(getFn(node, acc.baseInterface, uppercaseFirstChar(node.name)))
             }
             return rfn[2](acc, x);
         }
@@ -100,6 +101,40 @@ const gatherStreams: Transducer<NodeField, NodeField> = (rfn) =>
         }
     ]
 
+// File Context Transducers
+export const withStreamFiles = filter((q: IFileContext) => isStreamFileContext(q))
+
+export const withDirectChildDirectories = (current: IFileContext) =>
+    filter((q: IFileContext) =>
+        q.filepath.startsWith(current.filepath) && q.directoryLevel - 1 === current.directoryLevel);
+
+export const gatherImports: Transducer<IFileContext, IFileContext> = (rfn) =>
+    <Reducer<any, IFileContext>>[
+        () => rfn[0](),
+        (acc) => rfn[1](acc),
+        (acc: IIndexFileContext, x: IFileContext) => {
+            const parts = x.filepath.split('/');
+            const objName = parts[parts.length - 1];
+            const i = `import { ${objName} } from './${objName}/streams';\n`;
+            acc.imports.push(i);
+            return rfn[2](acc, x);
+        }
+    ]
+export const gatherStreamObjectProps: Transducer<IFileContext, IFileContext> = (rfn) =>
+    <Reducer<any, IFileContext>>[
+        () => rfn[0](),
+        (acc) => rfn[1](acc),
+        (acc: IIndexFileContext, x: IFileContext) => {
+            const objectName = x.filepath.split('/').pop();
+            if (x.directoryLevel === 1) {
+                acc.rootObjectProps.push(`\t...${objectName},\n`);
+            } else {
+                acc.rootObjectProps.push(`\t${objectName},\n`);
+            }
+            return rfn[2](acc, x);
+        }
+    ]
+
 export const pathsXform = comp(
     attachHeader,
     buildLocalImports,
@@ -111,4 +146,11 @@ export const streamsXform = comp(
     attachHeader,
     buildLocalImports,
     gatherStreams,
+)
+
+export const indexXform = (currentCtx: IStreamFileContext) => comp(
+    withStreamFiles,
+    withDirectChildDirectories(currentCtx),
+    gatherImports,
+    gatherStreamObjectProps,
 )

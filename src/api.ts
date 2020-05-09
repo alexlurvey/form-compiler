@@ -30,3 +30,11 @@ export type IPathFileContext = {
 export type IStreamFileContext = {
     streams: [string, string][],
 } & IBaseFileContext;
+
+export type IIndexFileContext = {
+    rootObjectName: string,
+    rootObjectProps: string[],
+    imports: string[],
+} & IBaseFileContext;
+
+export type IFileContext = IPathFileContext | IStreamFileContext;

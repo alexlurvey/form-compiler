@@ -1,10 +1,10 @@
 import { defmulti } from '@thi.ng/defmulti';
 import * as tx from '@thi.ng/transducers';
 import { appendFileSync, existsSync, mkdirSync } from 'fs';
-import { AST, IBaseFileContext, IPathFileContext, IStreamFileContext } from './api';
+import { AST, IBaseFileContext, IIndexFileContext, IPathFileContext, IStreamFileContext } from './api';
 import { pathsXform, streamsXform } from './ast-transforms';
-import { importThingPaths, importThingRstream, importStatement, buildStreamObj } from './templates';
-import { isObjectNode } from './utils';
+import { importThingPaths, importThingRstream, importStatement, buildStreamObj, syncedStreams, buildStreamGetters, buildStreamSetters } from './templates';
+import { isObjectNode, isStreamFileContext, isPathFileContext, isIndexFileContext, lowercaseFirstChar } from './utils';
 
 export const buildFileContexts = (buildpath: string, schemaFilename: string, baseInterface: string = null) => {
     return (acc: object[], x: AST) => {
@@ -17,7 +17,7 @@ export const buildFileContexts = (buildpath: string, schemaFilename: string, bas
 
             const baseCtx: IBaseFileContext = {
                 schemaFilename,
-                filepath: buildpath + '/' + base + '/' + levels.join('/'),
+                filepath: buildpath + '/' + base + `${levels.length ? '/' : ''}` + levels.join('/'),
                 directoryLevel: levels.length + 1,
                 header: '',
             }
@@ -67,16 +67,37 @@ const writeStreamFile = (ctx: IStreamFileContext) => {
     appendFileSync(fullpath, ctx.header);
     appendFileSync(fullpath, imports.join(''));
     appendFileSync(fullpath, buildStreamObj(ctx.streams));
+    appendFileSync(fullpath, syncedStreams(ctx.filepath.split('/').reduce((_, x) => x, '')));
+    appendFileSync(fullpath, buildStreamGetters(ctx.streams).join(''));
+    appendFileSync(fullpath, buildStreamSetters(ctx.streams).join(''));
+}
+
+const writeIndexFile = (ctx: IIndexFileContext) => {
+    const fullpath = `${ctx.filepath}/${ctx.filename}`;
+    (!existsSync(ctx.filepath) && mkdirSync(ctx.filepath, { recursive: true }))
+
+    appendFileSync(fullpath, ctx.header);
+    appendFileSync(fullpath, ctx.libraryImports.join(''));
+    appendFileSync(fullpath, ctx.imports.join(''));
+
+    const rootObj = `\nconst src = {\n\t...streams,\n${ctx.rootObjectProps.join('')}};\n\n`;
+    const syncedStream = `export const ${lowercaseFirstChar(ctx.rootObjectName)} = sync({ src, mergeOnly: true })\n`;
+    appendFileSync(fullpath, rootObj);
+    appendFileSync(fullpath, syncedStream);
 }
 
 export const writeToFile = defmulti(ctx => {
-    if (typeof ctx === 'object' && ctx.hasOwnProperty('setters')) {
+    if (isPathFileContext(ctx)) {
         return 'paths';
     }
-    if (typeof ctx === 'object' && ctx.hasOwnProperty('streams')) {
+    if (isStreamFileContext(ctx)) {
         return 'streams';
+    }
+    if (isIndexFileContext(ctx)) {
+        return 'index';
     }
 })
 
 writeToFile.add('paths', writePathFile);
 writeToFile.add('streams', writeStreamFile);
+writeToFile.add('index', writeIndexFile);

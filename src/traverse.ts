@@ -2,7 +2,7 @@ import { arrayZipper, Location } from '@thi.ng/zipper';
 import { appendFileSync } from 'fs';
 import { AST, Node, NodeField } from './api';
 import { getFn, setFn } from './templates';
-import { isNode, noop, upperCaseFirstChar } from './utils'
+import { isNode, noop, uppercaseFirstChar } from './utils'
 
 // older strategy of building files copied here.
 
@@ -110,8 +110,8 @@ export const importsForFile = (ast: NodeField[], interfaceNames: string[]): stri
 export const writeSimpleSettersToFile = (ast: NodeField[], file: string, intfc: string) => {
     const zip = arrayZipper(ast);
     const onNodeVisit = (node: Node) => {
-        appendFileSync(file, getFn(node as Node, intfc, upperCaseFirstChar(node.name)));
-        appendFileSync(file, setFn(node as Node, intfc, upperCaseFirstChar(node.name)));
+        appendFileSync(file, getFn(node as Node, intfc, uppercaseFirstChar(node.name)));
+        appendFileSync(file, setFn(node as Node, intfc, uppercaseFirstChar(node.name)));
     }
     walk(zip.next, onNodeVisit)
 }

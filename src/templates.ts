@@ -46,6 +46,13 @@ export const importStatement = (imports: string[], filename: string, levelFromRo
 export const importThingPaths = "import * as paths from '@thi.ng/paths';\n";
 export const importThingRstream = "import { stream, sync } from '@thi.ng/rstream';\n";
 export const initialComment = '// This file is auto-generated\n';
+export const IArrayOps = `interface IArrayOps<T> {
+    pop(): void;
+    push(value: T): void;
+    removeAt(idx: number): void;
+    shift(): void;
+    unshift(value: T): void;
+}\n\n`
 
 export const buildStreamObj = (properties: [ string, string ][]) => {
     let result = 'export const streams = {\n';

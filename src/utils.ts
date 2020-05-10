@@ -18,6 +18,16 @@ export const lowercaseFirstChar = (str: string) => str.length ? str[0].toLocaleL
 
 export const isArrayType = (str: string) => str.endsWith('[]') || str.startsWith('Array<');
 
+export const typeOfArray = (str: string) => {
+    if (str.endsWith('[]')) {
+        return str.slice(0, str.length-2);
+    } else if (str.startsWith('Array<') && str.endsWith('>')) {
+        return str.slice(6, str.length-1);
+    } else {
+        return str;
+    }
+}
+
 export const isStreamFileContext = (q: IFileContext) => typeof q === 'object' && q.hasOwnProperty('streams');
 export const isPathFileContext = (q: IFileContext) => typeof q === 'object' && q.hasOwnProperty('getters');
 export const isIndexFileContext = (q: IFileContext) => typeof q === 'object' && q.hasOwnProperty('rootObjectProps');

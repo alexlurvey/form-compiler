@@ -2,6 +2,7 @@ export interface Form {
     name: string;
     num: number;
     bool: boolean;
+    tuple: [ string, string[] ];
     person: Person;
     secondPerson: Person;
 }

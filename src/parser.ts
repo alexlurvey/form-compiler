@@ -33,7 +33,8 @@ const typeName = oneOrMore(alt([
 
 const t = oneOrMore(alt([
     ALPHA_NUM,
-    oneOf('<>[]?'),
+    WS1,
+    oneOf('<>[]?,'),
 ]))
 // const content = join(oneOrMore(alt([
 //     ALPHA_NUM,

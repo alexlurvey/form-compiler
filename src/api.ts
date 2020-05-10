@@ -1,4 +1,5 @@
 export type Field = [ string, string ];
+export type Enum = [ 'enum', [ string ]];
 export type Interface = [ string, Field[] ];
 export type Tree = Interface[];
 
@@ -7,6 +8,7 @@ export type Node = {
     name: string;
     path: Node[];
     isArray: boolean;
+    isEnum: boolean;
 }
 export type NodeField = Node | AST;
 export type AST = [ Node, NodeField[] ]

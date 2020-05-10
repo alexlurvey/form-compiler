@@ -1,5 +1,5 @@
 export interface Form {
-    name: string;
+    name: Names;
     num: number;
     bool: boolean;
     tuple: [ string, string[] ];
@@ -17,4 +17,9 @@ export type Person = {
 export type Address = {
     street: string;
     city: string;
+}
+
+export enum Names {
+    Frank = 'Frank',
+    Alice = 'Alice',
 }

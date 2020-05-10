@@ -21,26 +21,15 @@ const typeName = oneOrMore(alt([
     oneOf('<>'),
 ]))
 
-// const typeAndName = collect(seq([
-//     WS0,
-//     discard(maybe(string('export'))),
-//     WS0,
-//     join(typeName),
-//     WS1,
-//     join(typeName),
-// ]))
-// xform(typeAndName, $ => ($.result = { type: $.result[0], name: $.result[1] }, $)),
-
 const t = oneOrMore(alt([
     ALPHA_NUM,
     WS1,
     oneOf('<>[]?,'),
 ]))
-// const content = join(oneOrMore(alt([
-//     ALPHA_NUM,
-//     WS1,
-//     oneOf('\'"[]<>()|:,')
-// ])))
+const enumT = oneOrMore(alt([
+    ALPHA_NUM,
+    oneOf('<>[]\'?"'), // TODO: expand options
+]))
 const field = collect(seq([
     WS0,
     join(oneOrMore(ALPHA_NUM)),
@@ -50,6 +39,16 @@ const field = collect(seq([
     join(t),
     discard(maybe(oneOf(',;'))),
     WS0,
+]))
+
+const enumField = collect(seq([
+    WS0,
+    join(oneOrMore(ALPHA_NUM)),
+    WS0,
+    discard(lit('=')),
+    WS0,
+    join(enumT), // TODO: expand options
+    discard(lit(',')),
 ]))
 
 const intfc = collect(seq([
@@ -77,8 +76,21 @@ const typ = collect(seq([
     WS0,
     discard(maybe(lit('{'))),
     collect(zeroOrMore(field)),
-    // content, // TODO: handle types that are just types (not fields)
     discard(maybe(oneOf('};')))
 ]))
 
-export const program = collect(zeroOrMore(alt([ typ, intfc ])))
+const enm = collect(seq([
+    WS0,
+    discard(maybe(string('export'))),
+    WS0,
+    string('enum'),
+    WS1,
+    xform(join(typeName), $ => ($.result = [$.result], $)),
+    WS0,
+    discard(lit('{')),
+    discard(zeroOrMore(enumField)),
+    WS0,
+    discard(lit('}')),
+]))
+
+export const program = collect(zeroOrMore(alt([ typ, intfc, enm ])))

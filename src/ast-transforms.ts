@@ -2,20 +2,20 @@ import { defmulti } from '@thi.ng/defmulti';
 import { Reducer, Transducer, comp, filter } from '@thi.ng/transducers';
 import { AST, Tree, Field, Interface, Node, NodeField, IFileContext, IIndexFileContext, IStreamFileContext } from './api';
 import { getFn, setFn, initialComment } from './templates';
-import { isNode, isObjectNode, isArrayType, uppercaseFirstChar, isStreamFileContext } from './utils';
+import { isNode, isObjectNode, isArrayType, uppercaseFirstChar, isStreamFileContext, isEnum } from './utils';
 
 const NESTED = 'nested';
 const LEAF = 'leaf';
 
-const buildLeafPaths = defmulti<AST | Node>(([ _name, type ]: Field, interfaces: object, _path: Node[]) => {
+const buildLeafPaths = defmulti<AST | Node>(([ _name, type ]: Field, interfaces: object, enums: Set<string>, _path: Node[]) => {
     return interfaces[type] ? NESTED : LEAF;
 })
-buildLeafPaths.add(NESTED, ([ name, type ]: Field, interfaces: object, path: Node[]) => {
-    const node = { name, type, isArray: isArrayType(type), path };
-    return [ node, interfaces[type].map(f => buildLeafPaths(f, interfaces, path.concat(node))) ];
+buildLeafPaths.add(NESTED, ([ name, type ]: Field, interfaces: object, enums: Set<string>, path: Node[]) => {
+    const node = { name, type, isArray: isArrayType(type), path, isEnum: false };
+    return [ node, interfaces[type].map(f => buildLeafPaths(f, interfaces, enums, path.concat(node))) ];
 })
-buildLeafPaths.add(LEAF, ([ name, type ]: Field, _interfaces: object, path: Node[]) => {
-    return { name, type, isArray: isArrayType(type), path };
+buildLeafPaths.add(LEAF, ([ name, type ]: Field, _interfaces: object, enums: Set<string>, path: Node[]) => {
+    return { name, type, isArray: isArrayType(type), isEnum: enums.has(type), path };
 })
 
 export const buildAst = (tree: Tree): AST[] => {
@@ -23,10 +23,16 @@ export const buildAst = (tree: Tree): AST[] => {
     const intfcs = tree.reduce((acc, intfc) => {
         return (acc[intfc[0]] = intfc[1], acc);
     }, {})
+    const enums = tree.reduce((acc, node) => {
+        if (node[0] === 'enum') {
+            acc.add(node[1][0])
+        }
+        return acc;
+    }, new Set())
     
     tree.forEach(([ name, fields ]: Interface) => {
-        const rootNode = { name, type: name, path: [], isArray: false }
-        asts.push([ rootNode, fields.map(f => buildLeafPaths(f, intfcs, [])) ]);
+        const rootNode = { name, type: name, path: [], isArray: false, isEnum: false }
+        asts.push([ rootNode, fields.map(f => buildLeafPaths(f, intfcs, enums, [])) ]);
     })
 
     return asts;
@@ -49,9 +55,11 @@ const buildLocalImports: Transducer<NodeField, NodeField> = (rfn) => {
     const reducer: Reducer<any, AST> = [
         () => rfn[0](),
         (acc) => rfn[1](acc),
-        (acc, x: AST) => {
+        (acc, x: AST | Node) => {
             if (isObjectNode(x)) {
                 acc.localImports.add(x[0].type)
+            } else if (isEnum(x)) {
+                acc.localImports.add((x as Node).type)
             }
             return rfn[2](acc, x);
         }

@@ -10,6 +10,7 @@ export const isNode = (node: AST | Node | NodeField[]) => typeof node === 'objec
 export const isObjectNode = (ast: AST | NodeField) => {
     return Array.isArray(ast) && ast.length == 2 && isNode(ast[0]) && Array.isArray(ast[1]);
 }
+export const isEnum = (node: AST | Node) => isNode(node) && (node as Node).isEnum;
 
 export const isPrimitive = (node: Node) => primitives.has(node.type);
 

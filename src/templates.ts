@@ -40,11 +40,11 @@ export const importStatement = (imports: string[], filename: string, levelFromRo
     const relativePath = levelFromRoot === 0
         ? './'
         : Array.from(range(levelFromRoot)).reduce((acc, _) => (acc += '../', acc), '');
-    return `import { ${imports.join(', ')} } from \'${relativePath}${filename}\';\n\n`;
+    return `import { ${imports.join(', ')} } from \'${relativePath}${filename}\';`;
 }
 
-export const importThingPaths = "import * as paths from '@thi.ng/paths';\n";
-export const importThingRstream = "import { stream, sync } from '@thi.ng/rstream';\n";
+export const importThingPaths = "import * as paths from '@thi.ng/paths';";
+export const importThingRstream = "import { stream, sync } from '@thi.ng/rstream';";
 export const initialComment = '// This file is auto-generated\n';
 export const IArrayOps = `interface IArrayOps<T> {
     pop(): void;

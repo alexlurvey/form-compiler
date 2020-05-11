@@ -1,3 +1,7 @@
+export interface IObjectOf<T> {
+    [id: string]: T;
+}
+
 export type Field = [ string, string ];
 export type Enum = [ 'enum', [ string ]];
 export type Interface = [ string, Field[] ];
@@ -20,7 +24,7 @@ export type IBaseFileContext = {
     directoryLevel: number,
     header: string,
     libraryImports?: string[],
-    localImports?: Set<string>,
+    localImports?: IObjectOf<Set<string>>,
 }
 
 export type IPathFileContext = {

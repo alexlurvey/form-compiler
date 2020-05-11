@@ -66,7 +66,6 @@ if (!inputfile) {
         return <IStreamFileContext>{
             ...ctx,
             filename: 'hooks.ts',
-            localImports: new Set([ 'streams' ]),
             libraryImports: [
                 "import { sideEffect } from '@thi.ng/transducers';",
                 "import { useCallback, useEffect, useState } from 'react';",

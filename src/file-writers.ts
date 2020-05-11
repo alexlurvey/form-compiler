@@ -42,7 +42,7 @@ export const buildFileContexts = (buildpath: string, schemaFilename: string, bas
                 baseInterface: baseInterface || node.name,
                 filename: 'paths.ts',
                 libraryImports: [ importThingPaths ],
-                localImports: new Set([ base ]),
+                localImports: { schemaFilename: new Set([ base ]) },
                 setters: [],
                 getters: [],
             }
@@ -51,7 +51,7 @@ export const buildFileContexts = (buildpath: string, schemaFilename: string, bas
                 ...baseCtx,
                 filename: 'streams.ts',
                 libraryImports: [ importThingRstream ],
-                localImports: new Set(),
+                localImports: {},
                 streams: [],
             }
 
@@ -65,22 +65,23 @@ export const buildFileContexts = (buildpath: string, schemaFilename: string, bas
 
 const writePathFile = (ctx: IPathFileContext) => {
     const fullpath = `${ctx.filepath}/${ctx.filename}`;
-    const distinctLocalImports: string[] = Array.from(ctx.localImports);
-    const imports = [ ...ctx.libraryImports, importStatement(distinctLocalImports, ctx.schemaFilename, ctx.directoryLevel) ];
+    const localImports: string[] = Object.keys(ctx.localImports)
+        .map(key => importStatement(Array.from(ctx.localImports[key]), key, ctx.directoryLevel));
+    const imports = [ ...ctx.libraryImports, ...localImports ];
     (!existsSync(ctx.filepath) && mkdirSync(ctx.filepath, { recursive: true }))
     appendFileSync(fullpath, ctx.header);
-    appendFileSync(fullpath, imports.join(''));
+    appendFileSync(fullpath, imports.join('\n').concat('\n\n'));
     appendFileSync(fullpath, ctx.setters.join(''))
     appendFileSync(fullpath, ctx.getters.join(''))
 }
 
 const writeStreamFile = (ctx: IStreamFileContext) => {
     const fullpath = `${ctx.filepath}/${ctx.filename}`;
-    const distinctLocalImports: string[] = Array.from(ctx.localImports);
-    const imports = [ ...ctx.libraryImports, importStatement(distinctLocalImports, ctx.schemaFilename, ctx.directoryLevel) ];
+    const localImports = Object.keys(ctx.localImports).map(key => importStatement(Array.from(ctx.localImports[key]), key, ctx.directoryLevel));
+    const imports = [ ...ctx.libraryImports, ...localImports ];
     (!existsSync(ctx.filepath) && mkdirSync(ctx.filepath, { recursive: true }))
     appendFileSync(fullpath, ctx.header);
-    appendFileSync(fullpath, imports.join(''));
+    appendFileSync(fullpath, imports.join('\n').concat('\n\n'));
     appendFileSync(fullpath, buildStreamObj(ctx.streams));
     appendFileSync(fullpath, syncedStreams(ctx.filepath.split('/').reduce((_, x) => x, '')));
     appendFileSync(fullpath, buildStreamGetters(ctx.streams).join(''));
@@ -93,7 +94,7 @@ const writeIndexFile = (ctx: IIndexFileContext) => {
 
     appendFileSync(fullpath, ctx.header);
     appendFileSync(fullpath, ctx.libraryImports.join(''));
-    appendFileSync(fullpath, ctx.imports.join(''));
+    appendFileSync(fullpath, ctx.imports.join('\n').concat('\n\n'));
 
     const rootObj = `\nconst src = {\n\t...streams,\n${ctx.rootObjectProps.join('')}};\n\n`;
     const syncedStream = `export const ${lowercaseFirstChar(ctx.rootObjectName)} = sync({ src, mergeOnly: true })\n`;
@@ -177,11 +178,12 @@ const removeAtCallback = ([name, type]: [string, string]) => {
 
 const writeHooksFile = (ctx: IStreamFileContext) => {
     const fullpath = `${ctx.filepath}/${ctx.filename}`;
-    const streamImports = Array.from(ctx.localImports).concat(ctx.streams.map(([ name, _ ]) => {
+    const streamImports = importStatement(['streams', ...ctx.streams.map(([ name, _ ]) => {
         return `set${uppercaseFirstChar(name)}`;
-    }))
+    })], 'streams');
+    const localImports = Object.keys(ctx.localImports).map(key => importStatement(Array.from(ctx.localImports[key]), key, ctx.directoryLevel));
     appendFileSync(fullpath, ctx.libraryImports.join('\n').concat('\n'));
-    appendFileSync(fullpath, importStatement(streamImports, 'streams'));
+    appendFileSync(fullpath, localImports.concat(streamImports).join('\n').concat('\n\n'));
     appendFileSync(fullpath, IArrayOps);
     appendFileSync(fullpath, ctx.streams.map(s => isArrayType(s[1]) ? hookFromArrayStream(s) : hookFromStream(s)).join('\n\n'))
 }

@@ -51,15 +51,20 @@ const attachHeader: Transducer<NodeField, NodeField> =
         return reducer;
     }
 
-const buildLocalImports: Transducer<NodeField, NodeField> = (rfn) => {
+const buildSchemaImports: Transducer<NodeField, NodeField> = (rfn) => {
     const reducer: Reducer<any, AST> = [
         () => rfn[0](),
         (acc) => rfn[1](acc),
         (acc, x: AST | Node) => {
+            const key = 'ITestForm';
             if (isObjectNode(x)) {
-                acc.localImports.add(x[0].type)
+                const { type } = x[0];
+                const set = acc.localImports[key] || new Set<string>();
+                acc.localImports[key] = set.add(type);
             } else if (isEnum(x)) {
-                acc.localImports.add((x as Node).type)
+                const { type } = x as Node;
+                const set = acc.localImports[key] || new Set<string>();
+                acc.localImports[key] = set.add(type);
             }
             return rfn[2](acc, x);
         }
@@ -145,14 +150,14 @@ export const gatherStreamObjectProps: Transducer<IFileContext, IFileContext> = (
 
 export const pathsXform = comp(
     attachHeader,
-    buildLocalImports,
+    buildSchemaImports,
     gatherSetters,
     gatherGetters,
 )
 
 export const streamsXform = comp(
     attachHeader,
-    buildLocalImports,
+    buildSchemaImports,
     gatherStreams,
 )
 

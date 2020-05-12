@@ -14,6 +14,12 @@ import { isStreamFileContext } from './src/utils';
 
 const inputfile = process.argv.length > 2 && process.argv[2];
 
+const reducer = (init: IIndexFileContext) => <Reducer<IIndexFileContext, IFileContext>>[
+    () => init,
+    (acc) => acc,
+    (acc, _) => acc
+]
+
 if (!inputfile) {
     console.error('Need a TypeScript file as first argument')
 } else if (!existsSync(inputfile)) {
@@ -32,29 +38,18 @@ if (!inputfile) {
     // copy provided TS schema file
     copyFileSync(schemaPath, buildPath + '/' + schemaFilename + '.' + extension)
     const formAst = asts.filter((q: AST) => q[0].name === 'Form') // TODO
-
     const contexts = formAst.reduce(buildFileContexts(buildPath, schemaFilename), []) as IFileContext[];
-    contexts.forEach(ctx => writeToFile(ctx))
-
     const streamfiles = <IStreamFileContext[]>contexts.filter(isStreamFileContext);
+    const indexCtxs = streamfiles
+        .map((ctx: IStreamFileContext) => {
+            const libraryImports = [ thingImports.rstream(['sync']) ];
+            const localImports = { streams: new Set([ 'streams' ])};
+            const rootObjectName = ctx.filepath.split('/').pop();
+            const indexCtx = buildIndexFileContext(ctx.schemaFilename, ctx.filepath, ctx.directoryLevel,
+                rootObjectName, libraryImports, localImports);
+            return transduce(indexXform(ctx), reducer(indexCtx), streamfiles);
+        })
+    const hooksCtxs = streamfiles.map(streamToHooksContext);
 
-    const reducer = (init: IIndexFileContext) => <Reducer<IIndexFileContext, IFileContext>>[
-        () => init,
-        (acc) => acc,
-        (acc, _) => acc
-    ]
-
-    const indexfiles = streamfiles.map(ctx => {
-        const libraryImports = [ thingImports.rstream(['sync']) ];
-        const localImports = { streams: new Set([ 'streams' ])};
-        const rootObjectName = ctx.filepath.split('/').pop();
-        const indexCtx = buildIndexFileContext(ctx.schemaFilename, ctx.filepath, ctx.directoryLevel,
-            rootObjectName, libraryImports, localImports);
-        return transduce(indexXform(ctx), reducer(indexCtx), streamfiles);
-    })
-
-    indexfiles.forEach(ctx => writeToFile(ctx));
-
-    const hookfiles = streamfiles.map(streamToHooksContext);
-    hookfiles.forEach(ctx => writeToFile(ctx))
+    [ ...contexts, ...indexCtxs, ...hooksCtxs ].forEach(ctx => writeToFile(ctx))
 }

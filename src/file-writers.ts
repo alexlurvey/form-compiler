@@ -1,7 +1,7 @@
 import { defmulti } from '@thi.ng/defmulti';
 import { reducer, transduce } from '@thi.ng/transducers';
 import { appendFileSync, existsSync, mkdirSync } from 'fs';
-import { AST, IIndexFileContext, IPathFileContext, IStreamFileContext } from './api';
+import { AST, IIndexFileContext, IPathFileContext, IStreamFileContext, FileType } from './api';
 import { pathsXform, streamsXform } from './xform';
 import { buildPathsFileContext, buildStreamsFileContext } from './file-contexts/defaults';
 import {
@@ -106,23 +106,8 @@ const writeHooksFile = (ctx: IStreamFileContext) => {
     appendFileSync(fullpath, ctx.streams.map(s => isArrayType(s[1]) ? hookFromArrayStream(s) : hookFromStream(s)).join('\n\n'))
 }
 
-export const writeToFile = defmulti(ctx => {
-    // TODO: change context checks
-    if (isHooksFileContext(ctx)) {
-        return 'hooks';
-    }
-    if (isPathFileContext(ctx)) {
-        return 'paths';
-    }
-    if (isStreamFileContext(ctx)) {
-        return 'streams';
-    }
-    if (isIndexFileContext(ctx)) {
-        return 'index';
-    }
-})
-
-writeToFile.add('paths', writePathFile);
-writeToFile.add('streams', writeStreamFile);
-writeToFile.add('index', writeIndexFile);
-writeToFile.add('hooks', writeHooksFile);
+export const writeToFile = defmulti(ctx => ctx.filename);
+writeToFile.add(FileType.Paths, writePathFile);
+writeToFile.add(FileType.Streams, writeStreamFile);
+writeToFile.add(FileType.Index, writeIndexFile);
+writeToFile.add(FileType.Hooks, writeHooksFile);

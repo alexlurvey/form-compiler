@@ -1,4 +1,4 @@
-import { IFileContext, Node, ASTItem } from './api';
+import { ASTItem, FileType, IFileContext, Node } from './api';
 
 const primitives = new Set(['string', 'boolean', 'number']); // TODO: https://www.typescriptlang.org/docs/handbook/basic-types.html
 
@@ -29,7 +29,7 @@ export const typeOfArray = (str: string) => {
     }
 }
 
-export const isStreamFileContext = (q: IFileContext) => typeof q === 'object' && q.hasOwnProperty('streams');
-export const isPathFileContext = (q: IFileContext) => typeof q === 'object' && q.hasOwnProperty('getters');
-export const isIndexFileContext = (q: IFileContext) => typeof q === 'object' && q.hasOwnProperty('rootObjectProps');
-export const isHooksFileContext = (q: IFileContext) => typeof q === 'object' && q.filename === 'hooks.ts';
+export const isStreamFileContext = (q: IFileContext) => typeof q === 'object' && q.filename ===  FileType.Streams;
+export const isPathFileContext = (q: IFileContext) => typeof q === 'object' && q.filename === FileType.Paths;
+export const isIndexFileContext = (q: IFileContext) => typeof q === 'object' && q.filename === FileType.Index;
+export const isHooksFileContext = (q: IFileContext) => typeof q === 'object' && q.filename === FileType.Hooks;

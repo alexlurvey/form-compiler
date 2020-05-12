@@ -1,4 +1,5 @@
 import {
+    FileType,
     IObjectOf,
     IPathFileContext,
     IStreamFileContext,
@@ -20,7 +21,7 @@ export const buildPathsFileContext = (
     directoryLevel,
     libraryImports,
     localImports,
-    filename: 'paths.ts',
+    filename: FileType.Paths,
     header: '',
     setters: [],
     getters: [],
@@ -38,7 +39,7 @@ export const buildStreamsFileContext = (
     directoryLevel,
     libraryImports,
     localImports,
-    filename: 'streams.ts',
+    filename: FileType.Streams,
     header: '',
     streams: [],
 })
@@ -57,14 +58,14 @@ export const buildIndexFileContext = (
     rootObjectName,
     libraryImports,
     localImports,
-    filename: 'index.ts',
+    filename: FileType.Index,
     header: '',
     rootObjectProps: [],
 })
 
 export const streamToHooksContext = (ctx: IStreamFileContext): IHooksFileContext => ({
     ...ctx,
-    filename: 'hooks.ts',
+    filename: FileType.Hooks,
     libraryImports: [
         "import { sideEffect } from '@thi.ng/transducers';",
         "import { useCallback, useEffect, useState } from 'react';",

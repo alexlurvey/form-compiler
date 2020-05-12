@@ -2,6 +2,13 @@ export interface IObjectOf<T> {
     [id: string]: T;
 }
 
+export enum FileType {
+    Index = 'index.ts',
+    Paths = 'paths.ts',
+    Streams = 'streams.ts',
+    Hooks = 'hooks.ts',
+}
+
 // initial AST generate from @thi.ng/parse
 export type Field = [ string, string ];
 export type Enum = [ 'enum', [ string ]];
@@ -23,7 +30,7 @@ export type ASTItem = Node | AST;
 export type IBaseFileContext = {
     schemaFilename: string,
     filepath: string,
-    filename?: string,
+    filename: FileType,
     directoryLevel: number,
     header: string,
     libraryImports?: string[],

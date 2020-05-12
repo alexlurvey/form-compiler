@@ -1,3 +1,7 @@
 node_modules
 build
-test-app
+test-app/node_modules
+test-app/.cache
+test-app/Form
+test-app/dist
+test-app/ITestForm.ts

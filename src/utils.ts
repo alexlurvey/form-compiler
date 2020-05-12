@@ -1,18 +1,18 @@
-import { ASTItem, FileType, IFileContext, Node } from './api';
+import { ASTItem, FileType, IFileContext, Field } from './api';
 
 const primitives = new Set(['string', 'boolean', 'number']); // TODO: https://www.typescriptlang.org/docs/handbook/basic-types.html
 
 export const noop = (..._args) => { return; };
 
-export const isNode = (node: ASTItem | ASTItem[]) => typeof node === 'object' && node.hasOwnProperty('name')
+export const isField = (node: ASTItem | ASTItem[]) => typeof node === 'object' && node.hasOwnProperty('name')
     && node.hasOwnProperty('type') && node.hasOwnProperty('path') && node.hasOwnProperty('isArray');
 
 export const isObjectNode = (ast: ASTItem) => {
-    return Array.isArray(ast) && ast.length == 2 && isNode(ast[0]) && Array.isArray(ast[1]);
+    return Array.isArray(ast) && ast.length == 2 && isField(ast[0]) && Array.isArray(ast[1]);
 }
-export const isEnum = (node: ASTItem) => isNode(node) && (node as Node).isEnum;
-
-export const isPrimitive = (node: Node) => primitives.has(node.type);
+export const isEnum = (node: ASTItem) => isField(node) && (node as Field).isEnum;
+export const isPrimitive = (node: Field) => primitives.has(node.type);
+export const isTuple = (type: string): boolean => type.startsWith('[') && type.endsWith(']');
 
 export const uppercaseFirstChar = (str: string) => str.length ? str[0].toUpperCase() + str.slice(1) : str;
 export const lowercaseFirstChar = (str: string) => str.length ? str[0].toLocaleLowerCase() + str.slice(1) : str;

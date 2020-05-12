@@ -10,25 +10,26 @@ export enum FileType {
 }
 
 // initial AST generate from @thi.ng/parse
-export type Field = [ string, string ];
+export type Prop = [ string, string ];
 export type Enum = [ 'enum', [ string ]];
 export type Interface = [ string, Field[] ];
 export type Tree = Interface[];
 
 // transformed AST
-export type Node = {
+export type Field = {
     type: string;
     name: string;
-    path: Node[];
+    path: Field[];
     isArray: boolean;
     isEnum: boolean;
 }
-export type AST = [ Node, (Node | AST)[] ]
-export type ASTItem = Node | AST;
+export type AST = [ Field, (Field | AST)[] ]
+export type ASTItem = Field | AST;
 
 // file contexts
 export type IBaseFileContext = {
     schemaFilename: string,
+    rootNode: Field,
     filepath: string,
     filename: FileType,
     directoryLevel: number,
@@ -38,20 +39,19 @@ export type IBaseFileContext = {
 }
 
 export type IPathFileContext = {
-    baseInterface: string,
     setters: string[],
     getters: string[],
 } & IBaseFileContext;
 
 export type IStreamFileContext = {
-    streams: [string, string][],
-} & IBaseFileContext;
-
-export type IIndexFileContext = {
-    rootObjectName: string,
+    streams: Field[],
     rootObjectProps: string[],
 } & IBaseFileContext;
 
-export type IHooksFileContext = IStreamFileContext;
+export type IIndexFileContext = {
+    filepath: string,
+    filename: string,
+}
 
+export type IHooksFileContext = IStreamFileContext;
 export type IFileContext = IPathFileContext | IStreamFileContext;

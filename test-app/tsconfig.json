@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "module": "es6",
+        "target": "es6",
+        "declaration": true,
+        "jsx": "react",
+        "allowSyntheticDefaultImports": true,
+        "declarationMap": true,
+        "experimentalDecorators": true,
+        "importHelpers": true,
+        "noUnusedParameters": true,
+        "noUnusedLocals": true,
+        "preserveConstEnums": true,
+        "moduleResolution": "node",
+        "strict": true,
+        "strictNullChecks": true,
+        "outDir": ".",
+        "sourceMap": true
+    },
+    "exclude": ["node_modules"],
+    "include": ["src/*.ts", "src/*.tsx", ]
+}
+

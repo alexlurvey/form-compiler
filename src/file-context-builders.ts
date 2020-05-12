@@ -1,22 +1,22 @@
 import {
+    Field,
     FileType,
     IObjectOf,
     IPathFileContext,
     IStreamFileContext,
-    IIndexFileContext,
     IHooksFileContext,
-} from "../api"
+} from "./api"
 
 export const buildPathsFileContext = (
     schemaFilename: string,
-    baseInterface: string,
+    rootNode: Field,
     filepath: string,
     directoryLevel: number,
     libraryImports = [] as string[],
     localImports = {} as IObjectOf<Set<string>>,
 ): IPathFileContext => ({
     schemaFilename,
-    baseInterface,
+    rootNode,
     filepath,
     directoryLevel,
     libraryImports,
@@ -29,12 +29,14 @@ export const buildPathsFileContext = (
 
 export const buildStreamsFileContext = (
     schemaFilename: string,
+    rootNode: Field,
     filepath: string,
     directoryLevel: number,
     libraryImports = [] as string[],
     localImports = {} as IObjectOf<Set<string>>,
 ): IStreamFileContext => ({
     schemaFilename,
+    rootNode,
     filepath,
     directoryLevel,
     libraryImports,
@@ -42,24 +44,6 @@ export const buildStreamsFileContext = (
     filename: FileType.Streams,
     header: '',
     streams: [],
-})
-
-export const buildIndexFileContext = (
-    schemaFilename: string,
-    filepath: string,
-    directoryLevel: number,
-    rootObjectName: string,
-    libraryImports = [] as string[],
-    localImports = {} as IObjectOf<Set<string>>,
-): IIndexFileContext => ({
-    schemaFilename,
-    filepath,
-    directoryLevel,
-    rootObjectName,
-    libraryImports,
-    localImports,
-    filename: FileType.Index,
-    header: '',
     rootObjectProps: [],
 })
 
@@ -70,4 +54,7 @@ export const streamToHooksContext = (ctx: IStreamFileContext): IHooksFileContext
         "import { sideEffect } from '@thi.ng/transducers';",
         "import { useCallback, useEffect, useState } from 'react';",
     ],
+    localImports: {
+        [ctx.schemaFilename]: ctx.localImports[ctx.schemaFilename],
+    }
 })

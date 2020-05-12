@@ -1,9 +1,16 @@
-import { typeOfArray, uppercaseFirstChar } from '../utils';
+import { Field } from '../api';
+import { typeOfArray, uppercaseFirstChar, isTuple, isArrayType } from '../utils';
 
 const primitiveDefaults = {
     string: '',
     boolean: false,
     number: 0,
+}
+
+const buildTupleDefaultValue = (type: string) => {
+    return type.slice(1, type.length-1).split(',')
+        .filter(q => q.length)
+        .map(q => isArrayType(q.trim()) ? [] : primitiveDefaults[q.trim()]);
 }
 
 export const IArrayOps = `interface IArrayOps<T> {
@@ -14,10 +21,13 @@ export const IArrayOps = `interface IArrayOps<T> {
     unshift(value: T): void;
 }\n\n`
 
-export const hookFromStream = ([ name, type ]: [string, string]) => {
-    const defaultVal = JSON.stringify(primitiveDefaults[type]);
-    const fn = `export const use${uppercaseFirstChar(name)} = (): [ ${type}, (x: ${type}) => void ] => {\n`;
-    const state = `\tconst [ value, setValue ] = useState<${type}>(() => streams.${name}.deref() || ${defaultVal});\n\n`;
+export const hookFromStream = ({ name, type, isEnum }: Field) => {
+    const defaultVal = isTuple(type)
+        ? JSON.stringify(buildTupleDefaultValue(type))
+        : JSON.stringify(primitiveDefaults[type]);
+    const t = isEnum ? `(${type} | undefined)` : type;
+    const fn = `export const use${uppercaseFirstChar(name)} = (): [ ${t}, (x: ${type}) => void ] => {\n`;
+    const state = `\tconst [ value, setValue ] = useState<${t}>(() => streams.${name}.deref() || ${defaultVal});\n\n`;
     const fx = `\tuseEffect(() => {
         const sub = streams.${name}.subscribe(sideEffect((val: ${type}) => setValue(val)));
         return () => sub.done();
@@ -29,7 +39,7 @@ export const hookFromStream = ([ name, type ]: [string, string]) => {
     return `${fn}${state}${fx}${cb}${ret}}`;
 }
 
-export const hookFromArrayStream = ([name, type]: [string, string]) => {
+export const hookFromArrayStream = ({name, type}: Field) => {
     const fn = `export const use${uppercaseFirstChar(name)} = (): [ ${type}, (x: ${type}) => void, IArrayOps<${typeOfArray(type)}> ] => {\n`;
     const state = `\tconst [ value, setValue ] = useState<${type}>(() => streams.${name}.deref() || []);\n\n`;
     const fx = `\tuseEffect(() => {

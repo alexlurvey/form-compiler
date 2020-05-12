@@ -1,30 +1,7 @@
-import { Reducer, Transducer, comp, filter } from '@thi.ng/transducers';
+import { Reducer, Transducer, comp } from '@thi.ng/transducers';
 import { getFn, setFn, initialComment } from './templates';
-import { AST, Node, ASTItem, IFileContext, IIndexFileContext, IStreamFileContext } from './api';
-import { isNode, isObjectNode, uppercaseFirstChar, isStreamFileContext, isEnum } from './utils';
-
-export const pathsXform = (schemaFilename: string) =>
-    comp(
-        attachHeader,
-        buildSchemaImports(schemaFilename),
-        gatherSetters,
-        gatherGetters,
-    )
-
-export const streamsXform = (schemaFilename: string) => 
-    comp(
-        attachHeader,
-        buildSchemaImports(schemaFilename),
-        gatherStreams,
-    )
-
-export const indexXform = (currentCtx: IStreamFileContext) =>
-    comp(
-        withStreamFiles,
-        withDirectChildDirectories(currentCtx),
-        gatherImports,
-        gatherStreamObjectProps,
-    )
+import { AST, Field, ASTItem, IStreamFileContext, IPathFileContext } from './api';
+import { isField, isObjectNode, uppercaseFirstChar, isEnum, isArrayType } from './utils';
 
 // AST Transducers
 const attachHeader: Transducer<ASTItem, ASTItem> =
@@ -39,35 +16,43 @@ const attachHeader: Transducer<ASTItem, ASTItem> =
         return reducer;
     }
 
-const buildSchemaImports = (schemaFilename: string): Transducer<ASTItem, ASTItem> => (rfn) => {
-    const reducer: Reducer<any, AST> = [
+const withRequiredInterfaceImports = (schemaFilename: string): Transducer<ASTItem, ASTItem> => (rfn) =>
+    <Reducer<any, ASTItem>>[
         () => rfn[0](),
         (acc) => rfn[1](acc),
-        (acc, x: AST | Node) => {
+        (acc, x: AST | Field) => {
             if (isObjectNode(x)) {
                 const { type } = x[0];
                 const set = acc.localImports[schemaFilename] || new Set<string>();
                 acc.localImports[schemaFilename] = set.add(type);
-            } else if (isEnum(x)) {
-                const set = acc.localImports[schemaFilename] || new Set<string>();
-                acc.localImports[schemaFilename] = set.add((x as Node).type);
             }
             return rfn[2](acc, x);
         }
     ]
-    return reducer;
-}
+
+const withRequiredEnumImports = (schemaFilename: string): Transducer<ASTItem, ASTItem> => (rfn) =>
+    <Reducer<any, ASTItem>>[
+        () => rfn[0](),
+        (acc) => rfn[1](acc),
+        (acc, x: AST | Field) => {
+            if (isEnum(x)) {
+                const set = acc.localImports[schemaFilename] || new Set<string>();
+                acc.localImports[schemaFilename] = set.add((x as Field).type);
+            }
+            return rfn[2](acc, x);
+        }
+    ]
 
 const gatherSetters: Transducer<ASTItem, ASTItem> = (rfn) =>
     <Reducer<any, ASTItem>>[
         () => rfn[0](),
         (acc) => rfn[1](acc),
-        (acc, x: ASTItem) => {
-            if (isNode(x)) {
-                acc.setters.push(setFn(x as Node, acc.baseInterface, uppercaseFirstChar((x as Node).name)));
+        (acc: IPathFileContext, x: ASTItem) => {
+            if (isField(x)) {
+                acc.setters.push(setFn(x as Field, acc.rootNode.type, uppercaseFirstChar((x as Field).name)));
             } else if (isObjectNode(x)) {
-                const node: Node = x[0];
-                acc.setters.push(setFn(node, acc.baseInterface, uppercaseFirstChar(node.name)))
+                const node: Field = x[0];
+                acc.setters.push(setFn(node, acc.rootNode.type, uppercaseFirstChar(node.name)))
             }
             return rfn[2](acc, x);
         }
@@ -77,12 +62,12 @@ const gatherGetters: Transducer<ASTItem, ASTItem> = (rfn) =>
     <Reducer<any, ASTItem>>[
         () => rfn[0](),
         (acc) => rfn[1](acc),
-        (acc, x: ASTItem) => {
-            if (isNode(x)) {
-                acc.getters.push(getFn(x as Node, acc.baseInterface, uppercaseFirstChar((x as Node).name)))
+        (acc: IPathFileContext, x: ASTItem) => {
+            if (isField(x)) {
+                acc.getters.push(getFn(x as Field, acc.rootNode.type, uppercaseFirstChar((x as Field).name)))
             } else if (isObjectNode(x)) {
-                const node: Node = x[0];
-                acc.getters.push(getFn(node, acc.baseInterface, uppercaseFirstChar(node.name)))
+                const node: Field = x[0];
+                acc.getters.push(getFn(node, acc.rootNode.type, uppercaseFirstChar(node.name)))
             }
             return rfn[2](acc, x);
         }
@@ -92,45 +77,49 @@ const gatherStreams: Transducer<ASTItem, ASTItem> = (rfn) =>
     <Reducer<any, ASTItem>>[
         () => rfn[0](),
         (acc) => rfn[1](acc),
-        (acc, x) => {
-            if (isNode(x)) {
-                acc.streams.push([(x as Node).name, (x as Node).type])
+        (acc: IStreamFileContext, x) => {
+            if (isField(x)) {
+                acc.streams.push(x as Field)
             }
             return rfn[2](acc, x);
         }
     ]
 
-// File Context Transducers
-export const withStreamFiles = filter((q: IFileContext) => isStreamFileContext(q))
-
-export const withDirectChildDirectories = (current: IFileContext) =>
-    filter((q: IFileContext) =>
-        q.filepath.startsWith(current.filepath) && q.directoryLevel - 1 === current.directoryLevel);
-
-export const gatherImports: Transducer<IFileContext, IFileContext> = (rfn) =>
-    <Reducer<any, IFileContext>>[
+const gatherDescendentStreamData: Transducer<ASTItem, ASTItem> = (rfn) =>
+    <Reducer<any, ASTItem>>[
         () => rfn[0](),
         (acc) => rfn[1](acc),
-        (acc: IIndexFileContext, x: IFileContext) => {
-            const parts = x.filepath.split('/');
-            const objName = parts[parts.length - 1];
-            const filepath = `${objName}/streams`;
-            const set = acc.localImports[filepath] || new Set();
-            acc.localImports[filepath] = set.add(objName);
-            return rfn[2](acc, x);
-        }
-    ]
-export const gatherStreamObjectProps: Transducer<IFileContext, IFileContext> = (rfn) =>
-    <Reducer<any, IFileContext>>[
-        () => rfn[0](),
-        (acc) => rfn[1](acc),
-        (acc: IIndexFileContext, x: IFileContext) => {
-            const objectName = x.filepath.split('/').pop();
-            if (x.directoryLevel === 1) {
-                acc.rootObjectProps.push(`\t...${objectName},\n`);
-            } else {
-                acc.rootObjectProps.push(`\t${objectName},\n`);
+        (acc: IStreamFileContext, x) => {
+            if (isObjectNode(x)) {
+                const [ node, _ ] = x as [ Field, any[]];
+                const path = `${node.name}/streams`;
+                const set = acc.localImports[path] || new Set();
+                acc.localImports[path] = set.add(node.name);
+                acc.rootObjectProps.push(`\t${node.name},\n`);
             }
             return rfn[2](acc, x);
         }
     ]
+
+export const pathsXform = (schemaFilename: string) =>
+    comp(
+        attachHeader,
+        withRequiredInterfaceImports(schemaFilename),
+        withRequiredEnumImports(schemaFilename),
+        gatherSetters,
+        gatherGetters,
+    )
+
+export const streamsXform = (schemaFilename: string) => 
+    comp(
+        attachHeader,
+        withRequiredEnumImports(schemaFilename),
+        gatherStreams,
+        gatherDescendentStreamData,
+    )
+
+export const hooksXform = (schemaFilename: string) =>
+    comp(
+        attachHeader,
+        withRequiredEnumImports(schemaFilename),
+    )

@@ -5,7 +5,7 @@ import { uppercaseFirstChar } from './utils';
 const setFnBody = (node: Node, rootType: string): string => {
     const generics = node.path.reduce((acc, n: Node) => (acc += `, "${n.name}"`), rootType).concat(`, "${node.name}"`);
     const path = node.path.map(q => q.name).concat(node.name);
-    return `return paths.mutIn<${generics}>(root, ${JSON.stringify(path)}, ${node.name});`;
+    return `return mutIn<${generics}>(root, ${JSON.stringify(path)}, ${node.name});`;
 }
 
 export const setFn = (node: Node, rootType: string, functionName: string) => {
@@ -16,21 +16,20 @@ return `export function set${functionName} (root: ${rootType}, ${node.name}: ${n
 
 export const setFnRoot = (type: string): string => {
 const updateVariable = type.toLowerCase();
-// return `export function set${type} (root: ${type}, ${updateVariable}: ${type}): ${type} {
 return `export function set${type} (${updateVariable}: ${type}): ${type} {
-    return (root = paths.setIn<${type}>(root, [], ${updateVariable}), root);
+    return (root = setIn<${type}>(root, [], ${updateVariable}), root);
 }\n\n`
 }
 
 export const getFnRoot = (type: string): string => {
-    return `const _get${type} = paths.defGetter<${type}>([]);
+    return `const _get${type} = defGetter<${type}>([]);
 export function get${type} () { return _get${type}(root); }`;
 }
 
 export const getFn = (node: Node, rootType: string, functionName: string): string => {
     const generics = node.path.reduce((acc, n: Node) => (acc += `, "${n.name}"`), rootType).concat(`, "${node.name}"`);
     const path = node.path.map(q => q.name).concat(node.name);
-return `const _get${functionName} = paths.defGetter<${generics}>(${JSON.stringify(path)});
+return `const _get${functionName} = defGetter<${generics}>(${JSON.stringify(path)});
 export function get${functionName} (root: ${rootType}): ${node.type} {
     return _get${functionName}(root);
 }\n\n`
@@ -43,8 +42,11 @@ export const importStatement = (imports: string[], filename: string, levelFromRo
     return `import { ${imports.join(', ')} } from \'${relativePath}${filename}\';`;
 }
 
-export const importThingPaths = "import * as paths from '@thi.ng/paths';";
-export const importThingRstream = "import { stream, sync } from '@thi.ng/rstream';";
+export const thingImports = {
+    paths: (items: string[]) => `import { ${items.join(', ')} } from '@thi.ng/paths';`,
+    rstream: (items: string[]) => `import { ${items.join(', ')} } from '@thi.ng/rstream';`,
+}
+
 export const initialComment = '// This file is auto-generated\n';
 export const IArrayOps = `interface IArrayOps<T> {
     pop(): void;

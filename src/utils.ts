@@ -1,16 +1,16 @@
-import { AST, IFileContext, Node, NodeField } from './api';
+import { IFileContext, Node, ASTItem } from './api';
 
 const primitives = new Set(['string', 'boolean', 'number']); // TODO: https://www.typescriptlang.org/docs/handbook/basic-types.html
 
 export const noop = (..._args) => { return; };
 
-export const isNode = (node: AST | Node | NodeField[]) => typeof node === 'object' && node.hasOwnProperty('name')
+export const isNode = (node: ASTItem | ASTItem[]) => typeof node === 'object' && node.hasOwnProperty('name')
     && node.hasOwnProperty('type') && node.hasOwnProperty('path') && node.hasOwnProperty('isArray');
 
-export const isObjectNode = (ast: AST | NodeField) => {
+export const isObjectNode = (ast: ASTItem) => {
     return Array.isArray(ast) && ast.length == 2 && isNode(ast[0]) && Array.isArray(ast[1]);
 }
-export const isEnum = (node: AST | Node) => isNode(node) && (node as Node).isEnum;
+export const isEnum = (node: ASTItem) => isNode(node) && (node as Node).isEnum;
 
 export const isPrimitive = (node: Node) => primitives.has(node.type);
 

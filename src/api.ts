@@ -14,8 +14,8 @@ export type Node = {
     isArray: boolean;
     isEnum: boolean;
 }
-export type NodeField = Node | AST;
-export type AST = [ Node, NodeField[] ]
+export type AST = [ Node, (Node | AST)[] ]
+export type ASTItem = Node | AST;
 
 export type IBaseFileContext = {
     schemaFilename: string,
@@ -24,7 +24,7 @@ export type IBaseFileContext = {
     directoryLevel: number,
     header: string,
     libraryImports?: string[],
-    localImports?: IObjectOf<Set<string>>,
+    localImports?: IObjectOf<Set<string>>, // key is filename, value is a set of named exports
 }
 
 export type IPathFileContext = {
@@ -40,7 +40,8 @@ export type IStreamFileContext = {
 export type IIndexFileContext = {
     rootObjectName: string,
     rootObjectProps: string[],
-    imports: string[],
 } & IBaseFileContext;
+
+export type IHooksFileContext = IStreamFileContext;
 
 export type IFileContext = IPathFileContext | IStreamFileContext;

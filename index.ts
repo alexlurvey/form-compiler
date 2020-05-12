@@ -1,17 +1,15 @@
 import { defContext } from '@thi.ng/parse';
-import {
-    copyFileSync,
-    existsSync,
-    readFileSync,
-} from 'fs';
-import { AST, IBaseFileContext, IStreamFileContext, IFileContext, IIndexFileContext } from './src/api';
+import { copyFileSync, existsSync, readFileSync } from 'fs';
+import { AST, IStreamFileContext, IFileContext, IIndexFileContext } from './src/api';
 import { buildAst, indexXform } from './src/ast-transforms';
 import { buildFileContexts, writeToFile } from './src/file-writers';
 import { program } from './src/parser';
+import { buildIndexFileContext, streamToHooksContext } from './src/file-contexts/defaults';
 
 import * as tx from '@thi.ng/transducers';
 import { Reducer } from '@thi.ng/transducers';
-import { importThingRstream } from './src/templates';
+import { thingImports } from './src/templates';
+import { isStreamFileContext } from './src/utils';
 
 const inputfile = process.argv.length > 2 && process.argv[2];
 
@@ -37,7 +35,7 @@ if (!inputfile) {
     const contexts = formAst.reduce(buildFileContexts(buildPath, schemaFilename), []) as IFileContext[];
     contexts.forEach(ctx => writeToFile(ctx))
 
-    const streamfiles = contexts.filter((q: IBaseFileContext) => typeof q === 'object' && q.hasOwnProperty('streams')) as IStreamFileContext[];
+    const streamfiles = <IStreamFileContext[]>contexts.filter(isStreamFileContext);
 
     const reducer = (init: IIndexFileContext) => <Reducer<IIndexFileContext, IFileContext>>[
         () => init,
@@ -46,32 +44,16 @@ if (!inputfile) {
     ]
 
     const indexfiles = streamfiles.map(ctx => {
-        const baseCtx: IBaseFileContext = {
-            schemaFilename: ctx.schemaFilename,
-            filepath: ctx.filepath,
-            directoryLevel: ctx.directoryLevel,
-            libraryImports: [ importThingRstream ],
-            header: '',
-            filename: 'index.ts',
-        }
+        const libraryImports = [ thingImports.rstream(['sync']) ];
+        const localImports = { streams: new Set([ 'streams' ])};
         const rootObjectName = ctx.filepath.split('/').pop();
-        const imports = [ "import { streams } from './streams';\n" ];
-        const initCtx: IIndexFileContext = { ...baseCtx, imports, rootObjectName, rootObjectProps: [] };
-        return tx.transduce(indexXform(ctx), reducer(initCtx), streamfiles);
+        const indexCtx = buildIndexFileContext(ctx.schemaFilename, ctx.filepath, ctx.directoryLevel,
+            rootObjectName, libraryImports, localImports);
+        return tx.transduce(indexXform(ctx), reducer(indexCtx), streamfiles);
     })
 
     indexfiles.forEach(ctx => writeToFile(ctx));
 
-    const hookfiles = streamfiles.map((ctx: IStreamFileContext) => {
-        return <IStreamFileContext>{
-            ...ctx,
-            filename: 'hooks.ts',
-            libraryImports: [
-                "import { sideEffect } from '@thi.ng/transducers';",
-                "import { useCallback, useEffect, useState } from 'react';",
-            ],
-        }
-    })
-
+    const hookfiles = streamfiles.map(streamToHooksContext);
     hookfiles.forEach(ctx => writeToFile(ctx))
 }

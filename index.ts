@@ -1,12 +1,13 @@
 import { defContext } from '@thi.ng/parse';
 import { copyFileSync, existsSync, readFileSync } from 'fs';
 import { AST, IStreamFileContext, IFileContext, IIndexFileContext } from './src/api';
-import { buildAst, indexXform } from './src/ast-transforms';
+import { buildAst } from './src/ast-transforms';
+import { indexXform } from './src/xform';
 import { buildFileContexts, writeToFile } from './src/file-writers';
 import { program } from './src/parser';
 import { buildIndexFileContext, streamToHooksContext } from './src/file-contexts/defaults';
 
-import * as tx from '@thi.ng/transducers';
+import { transduce } from '@thi.ng/transducers';
 import { Reducer } from '@thi.ng/transducers';
 import { thingImports } from './src/templates';
 import { isStreamFileContext } from './src/utils';
@@ -49,7 +50,7 @@ if (!inputfile) {
         const rootObjectName = ctx.filepath.split('/').pop();
         const indexCtx = buildIndexFileContext(ctx.schemaFilename, ctx.filepath, ctx.directoryLevel,
             rootObjectName, libraryImports, localImports);
-        return tx.transduce(indexXform(ctx), reducer(indexCtx), streamfiles);
+        return transduce(indexXform(ctx), reducer(indexCtx), streamfiles);
     })
 
     indexfiles.forEach(ctx => writeToFile(ctx));

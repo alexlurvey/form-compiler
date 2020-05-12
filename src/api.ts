@@ -2,11 +2,13 @@ export interface IObjectOf<T> {
     [id: string]: T;
 }
 
+// initial AST generate from @thi.ng/parse
 export type Field = [ string, string ];
 export type Enum = [ 'enum', [ string ]];
 export type Interface = [ string, Field[] ];
 export type Tree = Interface[];
 
+// transformed AST
 export type Node = {
     type: string;
     name: string;
@@ -17,6 +19,7 @@ export type Node = {
 export type AST = [ Node, (Node | AST)[] ]
 export type ASTItem = Node | AST;
 
+// file contexts
 export type IBaseFileContext = {
     schemaFilename: string,
     filepath: string,

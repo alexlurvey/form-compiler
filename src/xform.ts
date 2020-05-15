@@ -1,7 +1,7 @@
 import { Reducer, Transducer, comp } from '@thi.ng/transducers';
 import { getFn, setFn, initialComment } from './templates';
 import { AST, Field, ASTItem, IStreamFileContext, IPathFileContext } from './api';
-import { isField, isObjectNode, uppercaseFirstChar, isEnum, isArrayType } from './utils';
+import { isField, isObjectNode, uppercaseFirstChar, isEnum } from './utils';
 
 // AST Transducers
 const attachHeader: Transducer<ASTItem, ASTItem> =
@@ -85,17 +85,31 @@ const gatherStreams: Transducer<ASTItem, ASTItem> = (rfn) =>
         }
     ]
 
-const gatherDescendentStreamData: Transducer<ASTItem, ASTItem> = (rfn) =>
+const gatherDescendantStreamImports: Transducer<ASTItem, ASTItem> = (rfn) =>
     <Reducer<any, ASTItem>>[
         () => rfn[0](),
         (acc) => rfn[1](acc),
         (acc: IStreamFileContext, x) => {
             if (isObjectNode(x)) {
-                const [ node, _ ] = x as [ Field, any[]];
+                const [ node, children ] = x as [ Field, ASTItem[]];
                 const path = `${node.name}/streams`;
                 const set = acc.localImports[path] || new Set();
-                acc.localImports[path] = set.add(node.name);
-                acc.rootObjectProps.push(`\t${node.name},\n`);
+                const imports = [ node.name, `init${uppercaseFirstChar(node.name)}` ];
+                imports.forEach(i => set.add(i));
+                acc.localImports[path] = set;
+            }
+            return rfn[2](acc, x);
+        }
+    ]
+
+const gatherDescendantStreamData: Transducer<ASTItem, ASTItem> = (rfn) =>
+    <Reducer<any, ASTItem>>[
+        () => rfn[0](),
+        (acc) => rfn[1](acc),
+        (acc: IStreamFileContext, x) => {
+            if (isObjectNode(x)) {
+                const [ node, _ ] = x as [ Field, ASTItem[]];
+                acc.descendantStreams.push(node);
             }
             return rfn[2](acc, x);
         }
@@ -113,9 +127,11 @@ export const pathsXform = (schemaFilename: string) =>
 export const streamsXform = (schemaFilename: string) => 
     comp(
         attachHeader,
+        withRequiredInterfaceImports(schemaFilename),
         withRequiredEnumImports(schemaFilename),
         gatherStreams,
-        gatherDescendentStreamData,
+        gatherDescendantStreamImports,
+        gatherDescendantStreamData,
     )
 
 export const hooksXform = (schemaFilename: string) =>

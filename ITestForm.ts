@@ -4,7 +4,7 @@ export interface Form {
     bool: boolean;
     tuple: [ string, string[] ];
     person: Person;
-    secondPerson: Person;
+    secondPerson?: Person;
 }
 
 export type Person = {

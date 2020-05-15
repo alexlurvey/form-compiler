@@ -21,16 +21,19 @@ import {
     buildStreamGetters,
     buildStreamSetters,
     IArrayOps,
-    syncedSourceType,
-    syncedStreams,
-    rootObjectSources,
     indexFileContent,
+    buildStreamRemovers,
+    buidlStreamAdders,
+    buildDescendantStreamAdders,
+    buildDescendantStreamRemovers,
+    buildInitFunc,
+    buildRemoveFunc,
 } from './templates';
 import {
     isObjectNode,
     uppercaseFirstChar,
-    isArrayType,
     isStreamFileContext,
+    lowercaseFirstChar,
 } from './utils';
 
 const defaultReducer = (init: IFileContext) => reducer(() => init, (acc, _) => acc);
@@ -67,7 +70,7 @@ export const buildFileContexts = (buildpath: string, schemaFilename: string, bas
             const pathsCtx = buildPathsFileContext(schemaFilename, node, filepath, directoryLevel, 
                 pathsLibraryImports, pathsLocalImports);
 
-            const streamsLibraryImports = [ thingImports.rstream(['ISubscribable', 'sync', 'stream']) ];
+            const streamsLibraryImports = [ thingImports.rstream(['CloseMode', 'ISubscribable', 'State', 'StreamSync', 'sync', 'stream']) ];
             const streamsCtx = buildStreamsFileContext(schemaFilename, node, filepath, directoryLevel, streamsLibraryImports);
 
             acc.push(transduce(pathsXform(schemaFilename), fileContextReducer(pathsCtx), children));
@@ -105,12 +108,16 @@ const writeStreamFile = (ctx: IStreamFileContext) => {
 
     appendFileSync(fullpath, ctx.header);
     appendFileSync(fullpath, imports.join('\n').concat('\n\n'));
-    appendFileSync(fullpath, syncedSourceType(ctx.rootNode).concat('\n\n'));
-    appendFileSync(fullpath, buildStreamObj(ctx.streams));
-    appendFileSync(fullpath, buildStreamGetters(ctx.streams).join(''));
-    appendFileSync(fullpath, buildStreamSetters(ctx.streams).join(''));
-    appendFileSync(fullpath, rootObjectSources(ctx.rootNode, ctx.rootObjectProps).concat('\n\n'));
-    appendFileSync(fullpath, syncedStreams(ctx.rootNode).concat('\n\n'));
+    appendFileSync(fullpath, `export let ${lowercaseFirstChar(ctx.rootNode.name)}: StreamSync<any, ${ctx.rootNode.type}>\n\n`);
+    appendFileSync(fullpath, buildStreamObj(ctx.streams).concat('\n\n'));
+    appendFileSync(fullpath, buildStreamGetters(ctx.streams).join('\n').concat('\n\n'));
+    appendFileSync(fullpath, buildStreamSetters(ctx.streams).join('\n').concat('\n\n'));
+    appendFileSync(fullpath, buildStreamRemovers(ctx.streams, ctx.rootNode).join('\n').concat('\n\n'))
+    appendFileSync(fullpath, buidlStreamAdders(ctx.streams, ctx.rootNode, ctx.descendantStreams).join('\n').concat('\n\n'));
+    appendFileSync(fullpath, buildDescendantStreamAdders(ctx.descendantStreams, ctx.rootNode).join('\n').concat('\n\n'));
+    appendFileSync(fullpath, buildDescendantStreamRemovers(ctx.descendantStreams, ctx.rootNode).join('\n').concat('\n\n'));
+    appendFileSync(fullpath, buildInitFunc(ctx.rootNode, ctx.streams, ctx.descendantStreams).concat('\n\n'));
+    appendFileSync(fullpath, buildRemoveFunc(ctx.rootNode));
 }
 
 const writeIndexFile = (ctx: IIndexFileContext) => {

@@ -1,41 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { trace } from '@thi.ng/transducers';
-import { Names } from '../ITestForm';
-import { form, setName } from '../Form';
-import {
-  setFirstName as setPersonFirstName,
-  setLastName as setPersonLastName,
-  setInterests as setPersonInterests,
-} from '../Form/person';
-import { setStreet as setPersonStreet, setCity as setPersonCity } from '../Form/person/address';
-import {
-  setFirstName as setSecondPersonFirstName,
-  setLastName as setSecondPersonLastName,
-  setInterests as setSecondPersonInterests,
-} from '../Form/secondPerson';
-import { setStreet as setSecondPersonStreet, setCity as setSecondPersonCity } from '../Form/secondPerson/address';
+import { Names, Form } from '../ITestForm';
+import { form, addName, removeName, setNum, initForm } from '../Form';
+import { setFirstName } from '../Form/person';
 import { FirstName, LastName, Interests } from './Person';
+import { SecondPerson } from './SecondPerson';
+
+const initialForm: Form = {
+  name: Names.Frank,
+  bool: true,
+  num: 3,
+  tuple: [ 'one', ['two']],
+  person: {
+    firstName: 'Alex',
+    lastName: 'Lurvey',
+    interests: ['int1', 'int2'],
+    address: {
+      city: 'city',
+      street: 'str',
+    }
+  }
+}
 
 const Form = () => {
   const [ formReady, setFormReady ] = useState(false);
+
   useEffect(() => {
-    form.subscribe(trace('form'))
-
-    setName(Names.Frank);
-
-    setPersonFirstName('Alex')
-    setPersonLastName('Lurvey')
-    setPersonInterests(['test'])
-    setPersonCity('city')
-    setPersonStreet('street')
-
-    setSecondPersonFirstName('Alex')
-    setSecondPersonLastName('Lurvey')
-    setSecondPersonInterests(['test'])
-    setSecondPersonCity('city')
-    setSecondPersonStreet('street')
-
+    initForm(initialForm)
+    form.subscribe(trace());
     setFormReady(true);
   }, [setFormReady]);
 
@@ -44,14 +37,24 @@ const Form = () => {
 
   return (
     <>
-      <FirstName />
-      <LastName />
-      <Interests />
+      <div>
+        <FirstName />
+        <LastName />
+        <Interests />
+        <SecondPerson />
+      </div>
+      <div>
+        <button onClick={removeName}>Remove name</button>
+        <button onClick={() => addName(Names.Alice)}>Add name</button>
+      </div>
       <div>
         <button onClick={_ => console.log(form.deref())}>Get Form</button>
       </div>
       <div>
-        <button onClick={_ => setPersonFirstName('programatically setting...')}>Set First Name</button>
+        <button onClick={_ => setFirstName('programatically setting...')}>Set First Name</button>
+      </div>
+      <div>
+        <button onClick={_ => setNum(Math.random())}>Set Number</button>
       </div>
     </>
   )

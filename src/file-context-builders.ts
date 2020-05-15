@@ -44,7 +44,7 @@ export const buildStreamsFileContext = (
     filename: FileType.Streams,
     header: '',
     streams: [],
-    rootObjectProps: [],
+    descendantStreams: [],
 })
 
 export const streamToHooksContext = (ctx: IStreamFileContext): IHooksFileContext => ({

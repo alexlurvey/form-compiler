@@ -10,7 +10,7 @@ export enum FileType {
 }
 
 // initial AST generate from @thi.ng/parse
-export type Prop = [ string, string ];
+export type Prop = [ string, boolean, string ]; // [ name, required, type ]
 export type Enum = [ 'enum', [ string ]];
 export type Interface = [ string, Field[] ];
 export type Tree = Interface[];
@@ -22,6 +22,7 @@ export type Field = {
     path: Field[];
     isArray: boolean;
     isEnum: boolean;
+    required: boolean;
 }
 export type AST = [ Field, (Field | AST)[] ]
 export type ASTItem = Field | AST;
@@ -45,7 +46,7 @@ export type IPathFileContext = {
 
 export type IStreamFileContext = {
     streams: Field[],
-    rootObjectProps: string[],
+    descendantStreams: Field[],
 } & IBaseFileContext;
 
 export type IIndexFileContext = {

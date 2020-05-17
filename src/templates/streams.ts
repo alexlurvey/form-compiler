@@ -1,11 +1,13 @@
 import { lowercaseFirstChar, uppercaseFirstChar } from '../utils';
 import { Field } from '../api';
 
+const typeForField = ({ type, isArray }: Field) => `${type}${isArray ? '[]' : ''}`;
+
 export const buildStreamObj = (streams: Field[]) => {
     let result = `export const streams = {\n`;
-    streams.forEach(({ name, type, path }) => {
-        const id = path.map(f => f.name).concat(name).join('.');
-        result += `\t${name}: stream<${type}>({ id: '${id}', closeOut: CloseMode.NEVER }),\n`
+    streams.forEach(field => {
+        const id = field.path.map(f => f.name).concat(field.name).join('.');
+        result += `\t${field.name}: stream<${typeForField(field)}>({ id: '${id}', closeOut: CloseMode.NEVER }),\n`
     })
     result += '};';
     return result;
@@ -13,9 +15,9 @@ export const buildStreamObj = (streams: Field[]) => {
 
 export const buildStreamGetters = (streams: Field[]) => {
     let result: string[] = [];
-    streams.forEach(({ name, type }) => {
-        const getter = `export function get${uppercaseFirstChar(name)} (): ${type} | undefined {
-    return streams.${name}.deref();\n}`;
+    streams.forEach(field => {
+        const getter = `export function get${uppercaseFirstChar(field.name)} (): ${typeForField(field)} | undefined {
+    return streams.${field.name}.deref();\n}`;
         result.push(getter)
     });
     return result;
@@ -23,9 +25,9 @@ export const buildStreamGetters = (streams: Field[]) => {
 
 export const buildStreamSetters = (streams: Field[]) => {
     let result: string[] = [];
-    streams.forEach(({ name, type }) => {
-        const setter = `export function set${uppercaseFirstChar(name)} (value: ${type}): void {
-    streams.${name}.next(value);\n}`;
+    streams.forEach((field) => {
+        const setter = `export function set${uppercaseFirstChar(field.name)} (value: ${typeForField(field)}): void {
+    streams.${field.name}.next(value);\n}`;
         result.push(setter);
     })
     return result;
@@ -41,13 +43,12 @@ export const buildStreamRemovers = (streams: Field[], rootNode: Field) => {
     return result;
 }
 
-export const buidlStreamAdders = (streams: Field[], rootNode: Field, descendantStreams: Field[]) => {
+export const buidlStreamAdders = (streams: Field[], rootNode: Field) => {
     let result: string[] = [];
-    streams.forEach(({ name, type, path }) => {
-        const id = path.map(f => f.name).concat(name).join('.');
-        const fn = `export function add${uppercaseFirstChar(name)} (value: ${type}): void {
-    streams.${name}.next(value);
-    ${lowercaseFirstChar(rootNode.name)}.add(streams.${name});\n}`;
+    streams.forEach(field => {
+        const fn = `export function add${uppercaseFirstChar(field.name)} (value: ${typeForField(field)}): void {
+    streams.${field.name}.next(value);
+    ${lowercaseFirstChar(rootNode.name)}.add(streams.${field.name});\n}`;
         result.push(fn)
     })
     return result;
@@ -55,12 +56,12 @@ export const buidlStreamAdders = (streams: Field[], rootNode: Field, descendantS
 
 export const buildDescendantStreamAdders = (streams: Field[], rootNode: Field) => {
     let result: string[] = [];
-    streams.forEach(({ name, type }) => {
-        const fn = `export function add${uppercaseFirstChar(name)} (value: ${type}): void {
-    if (!${name} || ${name}.getState() !== State.ACTIVE) {
-        init${uppercaseFirstChar(name)}(value)
+    streams.forEach(field => {
+        const fn = `export function add${uppercaseFirstChar(field.name)} (value: ${typeForField(field)}): void {
+    if (!${field.name} || ${field.name}.getState() !== State.ACTIVE) {
+        init${uppercaseFirstChar(field.name)}(value)
     }
-    ${lowercaseFirstChar(rootNode.name)}.add(${name})\n}`;
+    ${lowercaseFirstChar(rootNode.name)}.add(${field.name})\n}`;
 
         result.push(fn);
     })

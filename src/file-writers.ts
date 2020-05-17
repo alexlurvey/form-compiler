@@ -113,7 +113,7 @@ const writeStreamFile = (ctx: IStreamFileContext) => {
     appendFileSync(fullpath, buildStreamGetters(ctx.streams).join('\n').concat('\n\n'));
     appendFileSync(fullpath, buildStreamSetters(ctx.streams).join('\n').concat('\n\n'));
     appendFileSync(fullpath, buildStreamRemovers(ctx.streams, ctx.rootNode).join('\n').concat('\n\n'))
-    appendFileSync(fullpath, buidlStreamAdders(ctx.streams, ctx.rootNode, ctx.descendantStreams).join('\n').concat('\n\n'));
+    appendFileSync(fullpath, buidlStreamAdders(ctx.streams, ctx.rootNode).join('\n').concat('\n\n'));
     appendFileSync(fullpath, buildDescendantStreamAdders(ctx.descendantStreams, ctx.rootNode).join('\n').concat('\n\n'));
     appendFileSync(fullpath, buildDescendantStreamRemovers(ctx.descendantStreams, ctx.rootNode).join('\n').concat('\n\n'));
     appendFileSync(fullpath, buildInitFunc(ctx.rootNode, ctx.streams, ctx.descendantStreams).concat('\n\n'));

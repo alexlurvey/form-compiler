@@ -6,6 +6,7 @@ import { form, addName, removeName, setNum, initForm } from '../Form';
 import { setFirstName } from '../Form/person';
 import { FirstName, LastName, Interests } from './Person';
 import { SecondPerson } from './SecondPerson';
+import { Communities } from './components';
 
 const initialForm: Form = {
   name: Names.Frank,
@@ -42,6 +43,7 @@ const Form = () => {
         <LastName />
         <Interests />
         <SecondPerson />
+        <Communities />
       </div>
       <div>
         <button onClick={removeName}>Remove name</button>

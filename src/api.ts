@@ -11,9 +11,10 @@ export enum FileType {
 
 // initial AST generate from @thi.ng/parse
 export type Prop = [ string, boolean, string ]; // [ name, required, type ]
-export type Enum = [ 'enum', [ string ]];
+export type EnumPairs = [ (string | number), (string | number) ]
+export type Enum = [ 'enum', string, EnumPairs[] ];
 export type Interface = [ string, Field[] ];
-export type Tree = Interface[];
+export type Tree = (Interface | Enum)[];
 
 // transformed AST
 export type Field = {
@@ -22,6 +23,7 @@ export type Field = {
     path: Field[];
     isArray: boolean;
     isEnum: boolean;
+    isInterface: boolean;
     required: boolean;
 }
 export type AST = [ Field, (Field | AST)[] ]

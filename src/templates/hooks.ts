@@ -7,6 +7,8 @@ const primitiveDefaults = {
     number: 0,
 }
 
+const typeForField = ({ type, isArray }: Field) => `${type}${isArray ? '[]' : ''}`;
+
 const buildTupleDefaultValue = (type: string) => {
     return type.slice(1, type.length-1).split(',')
         .filter(q => q.length)
@@ -21,11 +23,12 @@ export const IArrayOps = `interface IArrayOps<T> {
     unshift(value: T): void;
 }\n\n`
 
-export const hookFromStream = ({ name, type, isEnum }: Field) => {
+export const hookFromStream = (field: Field) => {
+    const { name, type, isEnum } = field
     const defaultVal = isTuple(type)
         ? JSON.stringify(buildTupleDefaultValue(type))
         : JSON.stringify(primitiveDefaults[type]);
-    const t = isEnum ? `(${type} | undefined)` : type;
+    const t = isEnum ? `(${typeForField(field)} | undefined)` : typeForField(field);
     const fn = `export const use${uppercaseFirstChar(name)} = (): [ ${t}, (x: ${type}) => void ] => {\n`;
     const state = `\tconst [ value, setValue ] = useState<${t}>(() => streams.${name}.deref() || ${defaultVal});\n\n`;
     const fx = `\tuseEffect(() => {
@@ -39,14 +42,16 @@ export const hookFromStream = ({ name, type, isEnum }: Field) => {
     return `${fn}${state}${fx}${cb}${ret}}`;
 }
 
-export const hookFromArrayStream = ({name, type}: Field) => {
-    const fn = `export const use${uppercaseFirstChar(name)} = (): [ ${type}, (x: ${type}) => void, IArrayOps<${typeOfArray(type)}> ] => {\n`;
-    const state = `\tconst [ value, setValue ] = useState<${type}>(() => streams.${name}.deref() || []);\n\n`;
+export const hookFromArrayStream = (field: Field) => {
+    const { name, type } = field;
+    const t = typeForField(field)
+    const fn = `export const use${uppercaseFirstChar(name)} = (): [ ${t}, (x: ${t}) => void, IArrayOps<${typeOfArray(type)}> ] => {\n`;
+    const state = `\tconst [ value, setValue ] = useState<${t}>(() => streams.${name}.deref() || []);\n\n`;
     const fx = `\tuseEffect(() => {
-        const sub = streams.${name}.subscribe(sideEffect((val: ${type}) => setValue(val)));
+        const sub = streams.${name}.subscribe(sideEffect((val: ${t}) => setValue(val)));
         return () => sub.done();
     }, [])\n\n`;
-    const cb = `\tconst setter = useCallback((val: ${type}) => {
+    const cb = `\tconst setter = useCallback((val: ${t}) => {
         set${uppercaseFirstChar(name)}(val);
     }, [])\n\n`;
     const arrayOps = buildArrayOps([name, type]);

@@ -3,7 +3,7 @@ import { getFn, setFn, initialComment } from './templates';
 import { AST, Field, ASTItem, IStreamFileContext, IPathFileContext } from './api';
 import { isField, isObjectNode, uppercaseFirstChar, isEnum } from './utils';
 
-// AST Transducers
+// Common
 const attachHeader: Transducer<ASTItem, ASTItem> =
     (rfn: Reducer<any, AST>): Reducer<any, ASTItem> => {
         const reducer: Reducer<any, ASTItem> = [
@@ -25,6 +25,9 @@ const withRequiredInterfaceImports = (schemaFilename: string): Transducer<ASTIte
                 const { type } = x[0];
                 const set = acc.localImports[schemaFilename] || new Set<string>();
                 acc.localImports[schemaFilename] = set.add(type);
+            } else if (isField(x) && (x as Field).isInterface) {
+                const set = acc.localImports[schemaFilename] || new Set<string>();
+                acc.localImports[schemaFilename] = set.add((x as Field).type);
             }
             return rfn[2](acc, x);
         }
@@ -43,6 +46,7 @@ const withRequiredEnumImports = (schemaFilename: string): Transducer<ASTItem, AS
         }
     ]
 
+// paths file
 const gatherSetters: Transducer<ASTItem, ASTItem> = (rfn) =>
     <Reducer<any, ASTItem>>[
         () => rfn[0](),
@@ -73,12 +77,13 @@ const gatherGetters: Transducer<ASTItem, ASTItem> = (rfn) =>
         }
     ]
 
+// streams
 const gatherStreams: Transducer<ASTItem, ASTItem> = (rfn) =>
     <Reducer<any, ASTItem>>[
         () => rfn[0](),
         (acc) => rfn[1](acc),
         (acc: IStreamFileContext, x) => {
-            if (isField(x)) {
+            if (isField(x) && !(x as Field).isInterface) {
                 acc.streams.push(x as Field)
             }
             return rfn[2](acc, x);
@@ -91,7 +96,7 @@ const gatherDescendantStreamImports: Transducer<ASTItem, ASTItem> = (rfn) =>
         (acc) => rfn[1](acc),
         (acc: IStreamFileContext, x) => {
             if (isObjectNode(x)) {
-                const [ node, children ] = x as [ Field, ASTItem[]];
+                const [ node, _children ] = x as [ Field, ASTItem[]];
                 const path = `${node.name}/streams`;
                 const set = acc.localImports[path] || new Set();
                 const imports = [ node.name, `init${uppercaseFirstChar(node.name)}` ];
@@ -115,6 +120,7 @@ const gatherDescendantStreamData: Transducer<ASTItem, ASTItem> = (rfn) =>
         }
     ]
 
+// full context xforms
 export const pathsXform = (schemaFilename: string) =>
     comp(
         attachHeader,

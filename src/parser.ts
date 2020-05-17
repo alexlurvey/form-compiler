@@ -24,11 +24,11 @@ const typeName = oneOrMore(alt([
 const t = oneOrMore(alt([
     ALPHA_NUM,
     WS1,
-    oneOf('<>[]?,'),
+    oneOf('<>[]?,'), // TODO: handle type/interfaces that use commas at the end of line instead of ;
 ]))
 const enumT = oneOrMore(alt([
     ALPHA_NUM,
-    oneOf('<>[]\'?"'), // TODO: expand options
+    oneOf('-<>[]\'?"'), // TODO: expand options
 ]))
 const field = collect(seq([
     WS0,
@@ -87,10 +87,10 @@ const enm = collect(seq([
     WS0,
     string('enum'),
     WS1,
-    xform(join(typeName), $ => ($.result = [$.result], $)),
+    join(typeName),
     WS0,
     discard(lit('{')),
-    discard(zeroOrMore(enumField)),
+    collect(zeroOrMore(enumField)),
     WS0,
     discard(lit('}')),
 ]))

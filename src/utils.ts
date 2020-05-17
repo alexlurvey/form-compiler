@@ -1,6 +1,6 @@
 import { ASTItem, FileType, IFileContext, Field } from './api';
 
-const primitives = new Set(['string', 'boolean', 'number']); // TODO: https://www.typescriptlang.org/docs/handbook/basic-types.html
+const primitives = new Set(['string', 'boolean', 'number', 'Date']); // TODO: https://www.typescriptlang.org/docs/handbook/basic-types.html
 
 export const noop = (..._args) => { return; };
 

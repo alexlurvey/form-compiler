@@ -1,11 +1,13 @@
 import {
     Field,
     FileType,
+    FileName,
     IObjectOf,
     IPathFileContext,
     IStreamFileContext,
     IHooksFileContext,
-} from "./api"
+} from "../api"
+import { thingImports, reactImports } from "../templates"
 
 export const buildPathsFileContext = (
     schemaFilename: string,
@@ -21,7 +23,8 @@ export const buildPathsFileContext = (
     directoryLevel,
     libraryImports,
     localImports,
-    filename: FileType.Paths,
+    filename: FileName.Paths,
+    fileType: FileType.Paths,
     header: '',
     setters: [],
     getters: [],
@@ -41,7 +44,8 @@ export const buildStreamsFileContext = (
     directoryLevel,
     libraryImports,
     localImports,
-    filename: FileType.Streams,
+    filename: FileName.Streams,
+    fileType: FileType.Streams,
     header: '',
     streams: [],
     descendantStreams: [],
@@ -49,10 +53,11 @@ export const buildStreamsFileContext = (
 
 export const streamToHooksContext = (ctx: IStreamFileContext): IHooksFileContext => ({
     ...ctx,
-    filename: FileType.Hooks,
+    filename: FileName.Hooks,
+    fileType: FileType.Hooks,
     libraryImports: [
-        "import { sideEffect } from '@thi.ng/transducers';",
-        "import { useCallback, useEffect, useState } from 'react';",
+        thingImports.transducers(['sideEffect']),
+        reactImports([ 'useCallback', 'useEffect', 'useState' ]),
     ],
     localImports: {
         [ctx.schemaFilename]: ctx.localImports[ctx.schemaFilename],

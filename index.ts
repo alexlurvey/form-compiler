@@ -27,7 +27,7 @@ if (!inputfile) {
     const formAst = asts.filter((q: AST) => q[0].name === 'Form') // TODO
     const contexts = formAst.reduce(buildFileContexts(buildPath, schemaFilename), []) as IFileContext[];
     const indexCtxs = Array.from(new Set(contexts.map(q => q.filepath)))
-        .map(filepath => ({ filepath, filename: FileType.Index }));
+        .map(filepath => ({ filepath, filename: FileType.Index, fileType: FileType.Index }));
 
     [ ...contexts, ...indexCtxs ].forEach(ctx => writeToFile(ctx))
 }

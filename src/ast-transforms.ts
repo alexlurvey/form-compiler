@@ -9,14 +9,14 @@ const buildLeafPaths = defmulti<AST | Field>(([ _name, _required, type ]: Prop, 
     return interfaces[type] ? NESTED : LEAF;
 })
 buildLeafPaths.add(NESTED, ([ name, required, type ]: Prop, interfaces: object, enums: Set<string>, path: Field[]) => {
-    const field = { name, type, isArray: isArrayType(type), path, required, isEnum: false, isInterface: true };
+    const field = { name, type, isArray: isArrayType(type), path, required, isEnum: false, isInterface: true, intfc: interfaces[type] };
     return [ field, interfaces[type].map(f => buildLeafPaths(f, interfaces, enums, path.concat(field))) ];
 })
 buildLeafPaths.add(LEAF, ([ name, required, type ]: Prop, interfaces: object, enums: Set<string>, path: Field[]) => {
     const isArray = isArrayType(type);
     const t = isArray ? typeOfArray(type) : type;
     const isInterface = !!interfaces[t];
-    return { name, type: t, required, isArray, isInterface, isEnum: enums.has(t), path };
+    return { name, type: t, required, isArray, isInterface, isEnum: enums.has(t), intfc: interfaces[t], path };
 })
 
 export const buildAst = (tree: Tree): AST[] => {
@@ -36,7 +36,7 @@ export const buildAst = (tree: Tree): AST[] => {
     
     tree.forEach(([ name, props ]: Interface) => {
         if (name !== 'enum') {
-            const rootField = { name, type: name, path: [], isArray: false, isEnum: false, required: true, isInterface: true }
+            const rootField = { name, type: name, path: [], isArray: false, isEnum: false, required: true, isInterface: true, intfc: intfcs[name] }
             asts.push([ rootField, props.map(f => buildLeafPaths(f, intfcs, enums, [])) ]);
         }
     })

@@ -6,6 +6,15 @@ export enum FileType {
     Index = 'index.ts',
     Paths = 'paths.ts',
     Streams = 'streams.ts',
+    ArrayStreams = 'array-streams.ts',
+    Hooks = 'hooks.ts',
+    ArrayHooks = 'array-hooks.ts',
+}
+
+export enum FileName {
+    Index = 'index.ts',
+    Paths = 'paths.ts',
+    Streams = 'streams.ts',
     Hooks = 'hooks.ts',
 }
 
@@ -25,6 +34,7 @@ export type Field = {
     isEnum: boolean;
     isInterface: boolean;
     required: boolean;
+    intfc: Prop[];
 }
 export type AST = [ Field, (Field | AST)[] ]
 export type ASTItem = Field | AST;
@@ -33,8 +43,9 @@ export type ASTItem = Field | AST;
 export type IBaseFileContext = {
     schemaFilename: string,
     rootNode: Field,
+    fileType: FileType,
     filepath: string,
-    filename: FileType,
+    filename: FileName,
     directoryLevel: number,
     header: string,
     libraryImports?: string[],
@@ -52,8 +63,9 @@ export type IStreamFileContext = {
 } & IBaseFileContext;
 
 export type IIndexFileContext = {
+    fileType: FileType,
     filepath: string,
-    filename: string,
+    filename: FileName,
 }
 
 export type IHooksFileContext = IStreamFileContext;

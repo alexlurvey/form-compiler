@@ -6,13 +6,14 @@ import { form, addName, removeName, setNum, initForm } from '../Form';
 import { setFirstName } from '../Form/person';
 import { FirstName, LastName, Interests } from './Person';
 import { SecondPerson } from './SecondPerson';
-import { Communities } from './components';
+import { Communities } from './Communities';
 
 const initialForm: Form = {
   name: Names.Frank,
   bool: true,
   num: 3,
   tuple: [ 'one', ['two']],
+  communities: [],
   person: {
     firstName: 'Alex',
     lastName: 'Lurvey',
@@ -31,7 +32,7 @@ const Form = () => {
     initForm(initialForm)
     form.subscribe(trace());
     setFormReady(true);
-  }, [setFormReady]);
+  }, [setFormReady])
 
   if (!formReady)
     return null;

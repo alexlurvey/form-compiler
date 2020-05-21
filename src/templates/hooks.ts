@@ -1,4 +1,4 @@
-import { Field } from '../api';
+import { Field, IHooksFileContext } from '../api';
 import { typeOfArray, uppercaseFirstChar, isTuple, isArrayType } from '../utils';
 
 const primitiveDefaults = {
@@ -102,3 +102,69 @@ export const removeAtCallback = ([name, _type]: [string, string]) => {
         set${uppercaseFirstChar(name)}(current.slice(0, idx).concat(current.slice(idx+1)));
     }, [])`
 }
+
+// field array hooks
+export const hookForFieldArray = (ctx: IHooksFileContext) => {
+    const { name, type } = ctx.rootNode;
+    return `export const use${uppercaseFirstChar(name)} = (): ${type}[] => {
+    const [ value, setValue ] = useState<${type}[]>(() => ${name}.deref() || [])
+
+    useEffect(() => {
+        const sub = ${name}.subscribe(sideEffect((val: ${type}[]) => setValue(val)))
+        return () => sub.done()
+    }, [])
+
+    return value;
+}`
+}
+
+export const hookForFieldArrayIds = (ctx: IHooksFileContext) => {
+    const { name, type } = ctx.rootNode;
+    return `export const use${uppercaseFirstChar(name)}Ids = <T>(getId: (value: ${type}) => T) => {
+    const [ ids, setIds ] = useState<T[]>(() => {
+        const current = ${name}.deref();
+        return current ? current.map(getId) : [];
+    })
+
+    useEffect(() => {
+        const sub = ${name}.subscribe(sideEffect((q: ${type}[]) => {
+            if (q.length !== ids.length) {
+                setIds(q.map(getId))
+            }
+        }))
+        return () => sub.done()
+    }, [ids, setIds])
+
+    return ids;
+}`
+}
+
+export const hookForIndividualField = (ctx: IHooksFileContext) => {
+    const { type, intfc } = ctx.rootNode;
+    return `const buildSetters = (streams: { [key in keyof ${type} ]: Stream<any> }) => {
+    return {${intfc.map(([name, _req, type]) => `\n\t\tset${uppercaseFirstChar(name)} (value: ${type}) {
+            streams.${name}.next(value)
+        }`).join(',')}
+    }
+}
+
+export const use${uppercaseFirstChar(type)}At = (index: number) => {
+    const [ item, setItem ] = useState<${type}>(() => {
+        return syncedStreams[index].deref();
+    })
+
+    const [ callbacks, _ ] = useState<{ [key: string]: any }>(() => {
+        return buildSetters(streams[index]);
+    })
+
+    useEffect(() => {
+        const sub = syncedStreams[index].subscribe(sideEffect((q: ${type}) => {
+            setItem(q)
+        }))
+        return () => sub.done()
+    }, [setItem])
+
+    return [ item, callbacks ]
+}`
+}
+

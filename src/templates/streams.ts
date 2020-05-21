@@ -1,5 +1,5 @@
 import { lowercaseFirstChar, uppercaseFirstChar } from '../utils';
-import { Field } from '../api';
+import { Field, IStreamFileContext, Prop } from '../api';
 
 const typeForField = ({ type, isArray }: Field) => `${type}${isArray ? '[]' : ''}`;
 
@@ -90,4 +90,65 @@ export const buildRemoveFunc = (rootNode: Field) => {
     return `export function remove${uppercaseFirstChar(rootNode.name)} (): void {
     ${lowercaseFirstChar(rootNode.name)}.unsubscribe();
 }`;
+}
+
+// Array of fields templates
+export const fieldArrayState = 'let nextId = 0;';
+export const buildStreamsForFieldArray = (ctx: IStreamFileContext) => {
+    const { type, name } = ctx.rootNode;
+    return `let forceNext = stream<boolean>()
+export let streams: { [key in keyof ${type}]: Stream<${type}[key]> }[] = []
+export let syncedStreams: StreamSync<any, any>[] = []
+const _${name} = sync<any, any>({ src: { forceNext }, mergeOnly: true, clean: true })
+export const ${name}: Subscription<${type}[], ${type}[]> =
+    _${name}.subscribe(map((q: { [key: string]: ${type} }) => {
+        return Object.keys(q).reduce((acc: ${type}[], x: string) => {
+            const idx = parseInt(x);
+            if (!isNaN(idx)) {
+                acc[idx] = q[x];
+            }
+            return acc;
+        }, [])
+    }))
+    .subscribe(map((q: ${type}[]) => q.filter(x => !!x)))`;
+}
+
+export const buildNewStreamObjectFn = (ctx: IStreamFileContext) => {
+    const { intfc, type, name } = ctx.rootNode;
+    return `const new${type}Streams = (${name}: ${type}) => ({
+${intfc.map(([n, _required, t]: Prop) => `\t${n}: stream<${t}>(s => s.next(${name}.${n})),\n`).join('')}})`;
+}
+
+export const buildAddFn = (ctx: IStreamFileContext) => {
+    const { name, type } = ctx.rootNode;
+    return `export function add (${name}: ${type}) {
+    const newstreams = new${type}Streams(${name})
+    const synced = sync<any, any>({ src: newstreams, id: \`\${nextId++}\`, mergeOnly: true, clean: true })
+    streams.push(newstreams)
+    syncedStreams.push(synced)
+    _${name}.add(synced);
+}`;
+}
+
+export const buildRemoveFn = (ctx: IStreamFileContext) => {
+    const { type } = ctx.rootNode;
+    return `export function remove (idx: number) {
+    if (idx < 0 || idx >= streams.length) {
+        throw Error(\`Cannot remove at \${idx} for ${type} of length \${streams.length}\`);
+    }
+    Object.keys(streams[idx]).forEach((key: string) => streams[idx][key as keyof ${type}].done())
+    _communities.removeID(syncedStreams[idx].id)
+    syncedStreams[idx].done()
+    streams = streams.slice(0, idx).concat(streams.slice(idx+1, streams.length))
+    syncedStreams = syncedStreams.slice(0, idx).concat(syncedStreams.slice(idx+1, syncedStreams.length))
+    forceNext.next(true)
+}`;
+}
+
+export const buildArrayOfFieldsInit = (ctx: IStreamFileContext) => {
+    const { name, type } = ctx.rootNode;
+    return `export function init${uppercaseFirstChar(name)} (value: ${type}[]) {
+    value.forEach((val: ${type}) => add(val))
+    nextId = value.length;
+}`
 }

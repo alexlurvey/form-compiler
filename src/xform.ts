@@ -1,7 +1,7 @@
 import { Reducer, Transducer, comp } from '@thi.ng/transducers';
 import { getFn, setFn, initialComment } from './templates';
 import { AST, Field, ASTItem, IStreamFileContext, IPathFileContext } from './api';
-import { isField, isObjectNode, uppercaseFirstChar, isEnum } from './utils';
+import { isField, isObjectNode, uppercaseFirstChar, isEnum, isArrayOfFields } from './utils';
 
 // Common
 const attachHeader: Transducer<ASTItem, ASTItem> =
@@ -95,8 +95,9 @@ const gatherDescendantStreamImports: Transducer<ASTItem, ASTItem> = (rfn) =>
         () => rfn[0](),
         (acc) => rfn[1](acc),
         (acc: IStreamFileContext, x) => {
-            if (isObjectNode(x)) {
-                const [ node, _children ] = x as [ Field, ASTItem[]];
+            const node: Field = isObjectNode(x) ? x[0]
+                : isArrayOfFields(x) ? x : null;
+            if (node) {
                 const path = `${node.name}/streams`;
                 const set = acc.localImports[path] || new Set();
                 const imports = [ node.name, `init${uppercaseFirstChar(node.name)}` ];
@@ -115,6 +116,8 @@ const gatherDescendantStreamData: Transducer<ASTItem, ASTItem> = (rfn) =>
             if (isObjectNode(x)) {
                 const [ node, _ ] = x as [ Field, ASTItem[]];
                 acc.descendantStreams.push(node);
+            } else if (isArrayOfFields(x)) {
+                acc.descendantStreams.push(x as Field)
             }
             return rfn[2](acc, x);
         }

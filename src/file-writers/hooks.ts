@@ -10,6 +10,7 @@ import {
     hookForIndividualField,
 } from '../templates';
 import { uppercaseFirstChar } from '../utils';
+import { getLocalImportStatements } from './helpers';
 
 export const writeHooksFile = (ctx: IHooksFileContext) => {
     const fullpath = `${ctx.filepath}/${ctx.filename}`;
@@ -27,13 +28,7 @@ export const writeHooksFile = (ctx: IHooksFileContext) => {
 export const writeFieldArrayHooksFile = (ctx: IHooksFileContext) => {
     const fullpath = `${ctx.filepath}/${ctx.filename}`;
     (!existsSync(ctx.filepath) && mkdirSync(ctx.filepath, { recursive: true }))
-    const localImports = Object.keys(ctx.localImports).map(key => {
-        if (key === ctx.schemaFilename) {
-            return importStatement(Array.from(ctx.localImports[key]), key, ctx.directoryLevel)
-        } else {
-            return importStatement(Array.from(ctx.localImports[key]), key)
-        }
-    });
+    const localImports = getLocalImportStatements(ctx);
     ctx.libraryImports.length && appendFileSync(fullpath, ctx.libraryImports.join('\n').concat('\n'))
     localImports.length && appendFileSync(fullpath, localImports.join('\n').concat('\n\n'))
     appendFileSync(fullpath, hookForFieldArray(ctx).concat('\n\n'))

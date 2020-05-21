@@ -1,7 +1,6 @@
 import { appendFileSync, existsSync, mkdirSync } from 'fs';
 import { IStreamFileContext } from '../api';
 import {
-    importStatement,
     buildStreamObj,
     buildStreamGetters,
     buildStreamSetters,
@@ -19,17 +18,11 @@ import {
     fieldArrayState,
 } from '../templates';
 import { lowercaseFirstChar } from '../utils';
+import { getLocalImportStatements } from './helpers';
 
 export const writeObjectStreamFile = (ctx: IStreamFileContext) => {
     const fullpath = `${ctx.filepath}/${ctx.filename}`;
-    const localImports = Object.keys(ctx.localImports).map(key => {
-        if (key === ctx.schemaFilename) {
-            return importStatement(Array.from(ctx.localImports[key]), key, ctx.directoryLevel)
-        } else {
-            return importStatement(Array.from(ctx.localImports[key]), key)
-        }
-    });
-    const imports = [ ...ctx.libraryImports, ...localImports ];
+    const imports = [ ...ctx.libraryImports, ...getLocalImportStatements(ctx) ];
     (!existsSync(ctx.filepath) && mkdirSync(ctx.filepath, { recursive: true }))
 
     appendFileSync(fullpath, ctx.header);
@@ -49,13 +42,7 @@ export const writeObjectStreamFile = (ctx: IStreamFileContext) => {
 export const writeArrayStreamFile = (ctx: IStreamFileContext) => {
     const fullpath = `${ctx.filepath}/${ctx.filename}`;
     (!existsSync(ctx.filepath) && mkdirSync(ctx.filepath, { recursive: true }))
-    const localImports = Object.keys(ctx.localImports).map(key => {
-        if (key === ctx.schemaFilename) {
-            return importStatement(Array.from(ctx.localImports[key]), key, ctx.directoryLevel)
-        } else {
-            return importStatement(Array.from(ctx.localImports[key]), key)
-        }
-    });
+    const localImports = getLocalImportStatements(ctx);
     ctx.libraryImports.length && appendFileSync(fullpath, ctx.libraryImports.join('\n').concat('\n'))
     localImports.length && appendFileSync(fullpath, localImports.join('\n').concat('\n\n'))
     appendFileSync(fullpath, fieldArrayState.concat('\n\n'))

@@ -22,7 +22,7 @@ export enum FileName {
 export type Prop = [ string, boolean, string ]; // [ name, required, type ]
 export type EnumPairs = [ (string | number), (string | number) ]
 export type Enum = [ 'enum', string, EnumPairs[] ];
-export type Interface = [ string, Field[] ];
+export type Interface = [ string, Prop[] ];
 export type Tree = (Interface | Enum)[];
 
 // transformed AST

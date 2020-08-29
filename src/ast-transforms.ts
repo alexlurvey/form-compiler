@@ -1,5 +1,5 @@
 import { defmulti } from '@thi.ng/defmulti';
-import { AST, Field, Prop, Tree, Interface, Enum } from './api';
+import { AST, Field, Prop, Interface, IObjectOf } from './api';
 import { isArrayType, typeOfArray } from './utils';
 
 const NESTED = 'nested';
@@ -19,27 +19,8 @@ buildLeafPaths.add(LEAF, ([ name, required, type ]: Prop, interfaces: object, en
     return { name, type: t, required, isArray, isInterface, isEnum: enums.has(t), intfc: interfaces[t], path };
 })
 
-export const buildAst = (tree: Tree): AST[] => {
-    const asts: AST[] = [];
-    const intfcs = tree.reduce((acc, intfc) => {
-        if (intfc[0] === 'enum') {
-            return acc;
-        }
-        return (acc[intfc[0]] = intfc[1], acc);
-    }, {})
-    const enums = tree.reduce((acc, field: Enum) => {
-        if (field[0] === 'enum') {
-            acc.add(field[1])
-        }
-        return acc;
-    }, new Set())
-    
-    tree.forEach(([ name, props ]: Interface) => {
-        if (name !== 'enum') {
-            const rootField = { name, type: name, path: [], isArray: false, isEnum: false, required: true, isInterface: true, intfc: intfcs[name] }
-            asts.push([ rootField, props.map(f => buildLeafPaths(f, intfcs, enums, [])) ]);
-        }
-    })
-
-    return asts;
+export const buildAst = (intfc: Interface, allInterfaces: IObjectOf<Prop[]>, allEnums: Set<string>): AST => {
+    const [ name, fields ] = intfc;
+    const rootField: Field = { name, type: name, path: [], isArray: false, isEnum: false, required: true, isInterface: true, intfc: allInterfaces[name] }
+    return [ rootField, fields.map(f => buildLeafPaths(f, allInterfaces, allEnums, [])) ];
 }

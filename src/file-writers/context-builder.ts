@@ -1,5 +1,5 @@
 import { transduce } from '@thi.ng/transducers';
-import { AST, ASTItem, FileType, Field } from '../api';
+import { AST, ASTItem, FileType, Field, IFileContext } from '../api';
 import { buildPathsFileContext, buildStreamsFileContext, streamToHooksContext } from './context-object-builders';
 import { fileContextReducer } from './reducers';
 import { thingImports, reactImports } from '../templates';
@@ -7,7 +7,7 @@ import { isObjectNode, isArrayOfFields, isTuple, isPrimitive } from '../utils';
 import { pathsXform, streamsXform, hooksXform } from '../xform';
 
 export const buildFileContexts = (buildpath: string, schemaFilename: string, baseInterface: string = null) => {
-    return (acc: object[], x: ASTItem) => {
+    return (acc: IFileContext[], x: ASTItem) => {
         if (isObjectNode(x)) {
             const [ node, children ] = x as AST;
             const base = baseInterface || node.name;

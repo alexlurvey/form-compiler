@@ -43,7 +43,7 @@ const allEnums: Set<string> = parseResult.reduce((acc, field: Enum) => {
 const formInterface: Interface = [ rootFormName, allInterfaces[rootFormName] ];
 const ast = buildAst(formInterface, allInterfaces, allEnums);
 
-const contexts = [ast].reduce(buildFileContexts(buildPath, schemaFilename), []);
+const contexts = [ast].reduce(buildFileContexts(buildPath, schemaFilename), []); // TODO: rework buildFileContexts to not be a reducing fn
 const indexCtxs = Array.from(new Set(contexts.map(q => q.filepath)))
     .map(filepath => ({ filepath, filename: FileType.Index, fileType: FileType.Index }));
 

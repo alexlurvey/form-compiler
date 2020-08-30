@@ -18,7 +18,7 @@ export enum FileName {
     Hooks = 'hooks.ts',
 }
 
-// initial AST generate from @thi.ng/parse
+// initial AST generated from @thi.ng/parse
 export type Prop = [ string, boolean, string ]; // [ name, required, type ]
 export type EnumPairs = [ (string | number), (string | number) ]
 export type Enum = [ 'enum', string, EnumPairs[] ];
@@ -26,6 +26,8 @@ export type Interface = [ string, Prop[] ];
 export type Tree = (Interface | Enum)[];
 
 // transformed AST
+export type AST = [ Field, ASTItem[] ]
+export type ASTItem = Field | AST;
 export type Field = {
     type: string;
     name: string;
@@ -36,8 +38,6 @@ export type Field = {
     required: boolean;
     intfc: Prop[];
 }
-export type AST = [ Field, (Field | AST)[] ]
-export type ASTItem = Field | AST;
 
 // file contexts
 export type IBaseFileContext = {

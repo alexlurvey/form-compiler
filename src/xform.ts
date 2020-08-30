@@ -20,7 +20,7 @@ const withRequiredInterfaceImports = (schemaFilename: string): Transducer<ASTIte
     <Reducer<any, ASTItem>>[
         () => rfn[0](),
         (acc) => rfn[1](acc),
-        (acc, x: AST | Field) => {
+        (acc, x: ASTItem) => {
             if (isObjectNode(x)) {
                 const { type } = x[0];
                 const set = acc.localImports[schemaFilename] || new Set<string>();
@@ -37,7 +37,7 @@ const withRequiredEnumImports = (schemaFilename: string): Transducer<ASTItem, AS
     <Reducer<any, ASTItem>>[
         () => rfn[0](),
         (acc) => rfn[1](acc),
-        (acc, x: AST | Field) => {
+        (acc, x: ASTItem) => {
             if (isEnum(x)) {
                 const set = acc.localImports[schemaFilename] || new Set<string>();
                 acc.localImports[schemaFilename] = set.add((x as Field).type);

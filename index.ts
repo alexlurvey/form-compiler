@@ -16,7 +16,7 @@ if (!inputfile) {
 
 let tmpIdx;
 const outdir = (tmpIdx = process.argv.indexOf('--outDir'), tmpIdx === -1 ? 'build' : process.argv[tmpIdx+1]);
-const rootFormName = (tmpIdx = process.argv.indexOf('--rootName'), tmpIdx === -1 ? 'Form' : process.argv[tmpIdx+1]);
+const rootInterface = (tmpIdx = process.argv.indexOf('--interface'), tmpIdx === -1 ? 'Form' : process.argv[tmpIdx+1]);
 
 const [ schemaFilename, extension ] = inputfile.split('.');
 const schemaPath = __dirname + '/' + schemaFilename + '.' + extension;
@@ -40,7 +40,7 @@ const allEnums: Set<string> = parseResult.reduce((acc, field: Enum) => {
     return acc;
 }, new Set<string>())
 
-const formInterface: Interface = [ rootFormName, allInterfaces[rootFormName] ];
+const formInterface: Interface = [ rootInterface, allInterfaces[rootInterface] ];
 const ast = buildAst(formInterface, allInterfaces, allEnums);
 
 const contexts = [ast].reduce(buildFileContexts(buildPath, schemaFilename), []); // TODO: rework buildFileContexts to not be a reducing fn

@@ -6,7 +6,7 @@
   "scripts": {
     "build": "ts-node index.ts",
     "clean": "rm -rf test-app/Form",
-    "dev": "yarn clean && ts-node index.ts ITestForm.ts --rootName Form --outDir test-app"
+    "dev": "yarn clean && ts-node index.ts ITestForm.ts --interface Form --outDir test-app"
   },
   "author": "Alex Lurvey",
   "license": "ISC",

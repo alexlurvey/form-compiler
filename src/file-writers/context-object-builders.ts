@@ -56,7 +56,6 @@ export const streamToHooksContext = (ctx: IStreamFileContext): IHooksFileContext
     filename: FileName.Hooks,
     fileType: FileType.Hooks,
     libraryImports: [
-        thingImports.transducers(['sideEffect']),
         reactImports([ 'useCallback', 'useEffect', 'useState' ]),
     ],
     localImports: {

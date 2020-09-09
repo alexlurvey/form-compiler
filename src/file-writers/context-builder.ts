@@ -55,8 +55,7 @@ export const buildFileContexts = (buildpath: string, schemaFilename: string, bas
             }
             hooksCtx.libraryImports = [
                 reactImports(['useEffect', 'useState']),
-                thingImports.rstream(['Stream']),
-                thingImports.transducers(['sideEffect'])
+                thingImports.rstream(['Stream'])
             ];
             hooksCtx.fileType = FileType.ArrayHooks;
             acc.push(streamsCtx, hooksCtx);

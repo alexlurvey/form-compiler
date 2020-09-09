@@ -32,7 +32,7 @@ export const hookFromStream = (field: Field) => {
     const fn = `export const use${uppercaseFirstChar(name)} = (): [ ${t}, (x: ${type}) => void ] => {\n`;
     const state = `\tconst [ value, setValue ] = useState<${t}>(() => streams.${name}.deref() || ${defaultVal});\n\n`;
     const fx = `\tuseEffect(() => {
-        const sub = streams.${name}.subscribe(sideEffect((val: ${type}) => setValue(val)));
+        const sub = streams.${name}.subscribe({ next: setValue });
         return () => sub.done();
     }, [])\n\n`;
     const cb = `\tconst setter = useCallback((val: ${type}) => {
@@ -48,7 +48,7 @@ export const hookFromArrayStream = (field: Field) => {
     const fn = `export const use${uppercaseFirstChar(name)} = (): [ ${t}, (x: ${t}) => void, IArrayOps<${typeOfArray(type)}> ] => {\n`;
     const state = `\tconst [ value, setValue ] = useState<${t}>(() => streams.${name}.deref() || []);\n\n`;
     const fx = `\tuseEffect(() => {
-        const sub = streams.${name}.subscribe(sideEffect((val: ${t}) => setValue(val)));
+        const sub = streams.${name}.subscribe({ next: setValue });
         return () => sub.done();
     }, [])\n\n`;
     const cb = `\tconst setter = useCallback((val: ${t}) => {
@@ -110,7 +110,7 @@ export const hookForFieldArray = (ctx: IHooksFileContext) => {
     const [ value, setValue ] = useState<${type}[]>(() => ${name}.deref() || [])
 
     useEffect(() => {
-        const sub = ${name}.subscribe(sideEffect((val: ${type}[]) => setValue(val)))
+        const sub = ${name}.subscribe({ next: setValue });
         return () => sub.done()
     }, [])
 
@@ -127,11 +127,11 @@ export const hookForFieldArrayIds = (ctx: IHooksFileContext) => {
     })
 
     useEffect(() => {
-        const sub = ${name}.subscribe(sideEffect((q: ${type}[]) => {
+        const sub = ${name}.subscribe({ next: (q: ${type}[]) => {
             if (q.length !== ids.length) {
                 setIds(q.map(getId))
             }
-        }))
+        }})
         return () => sub.done()
     }, [ids, setIds])
 
@@ -158,9 +158,7 @@ export const use${uppercaseFirstChar(type)}At = (index: number) => {
     })
 
     useEffect(() => {
-        const sub = syncedStreams[index].subscribe(sideEffect((q: ${type}) => {
-            setItem(q)
-        }))
+        const sub = syncedStreams[index].subscribe({ next: setItem });
         return () => sub.done()
     }, [setItem])
 

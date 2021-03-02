@@ -5,3 +5,10 @@ test-app/.cache
 test-app/Form
 test-app/dist
 test-app/ITestForm.ts
+
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions

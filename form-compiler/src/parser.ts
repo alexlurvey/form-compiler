@@ -34,7 +34,7 @@ const field = collect(seq([
     WS0,
     join(oneOrMore(ALPHA_NUM)),
     WS0,
-    xform(maybe(lit('?')), $ => ($.result = $.result !== '?', $)),
+    xform(maybe(lit('?')), $ => ($!.result = $?.result !== '?', $)),
     WS0,
     discard(lit(':')),
     WS0,

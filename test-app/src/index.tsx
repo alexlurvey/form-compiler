@@ -25,7 +25,7 @@ const initialForm: Form = {
   }
 }
 
-const Form = () => {
+const TestApp = () => {
   const [ formReady, setFormReady ] = useState(false);
 
   useEffect(() => {
@@ -64,7 +64,7 @@ const Form = () => {
 }
 
 const Root = () => {
-  return <Form />;
+  return <TestApp />;
 }
 
 ReactDOM.render(

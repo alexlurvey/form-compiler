@@ -22,7 +22,7 @@ import { getLocalImportStatements } from './helpers';
 
 export const writeObjectStreamFile = (ctx: IStreamFileContext) => {
     const fullpath = `${ctx.filepath}/${ctx.filename}`;
-    const imports = [ ...ctx.libraryImports, ...getLocalImportStatements(ctx) ];
+    const imports = [ ...(ctx?.libraryImports ?? []), ...getLocalImportStatements(ctx) ];
     (!existsSync(ctx.filepath) && mkdirSync(ctx.filepath, { recursive: true }))
 
     appendFileSync(fullpath, ctx.header);
@@ -43,7 +43,7 @@ export const writeArrayStreamFile = (ctx: IStreamFileContext) => {
     const fullpath = `${ctx.filepath}/${ctx.filename}`;
     (!existsSync(ctx.filepath) && mkdirSync(ctx.filepath, { recursive: true }))
     const localImports = getLocalImportStatements(ctx);
-    ctx.libraryImports.length && appendFileSync(fullpath, ctx.libraryImports.join('\n').concat('\n'))
+    ctx?.libraryImports?.length && appendFileSync(fullpath, ctx.libraryImports.join('\n').concat('\n'))
     localImports.length && appendFileSync(fullpath, localImports.join('\n').concat('\n\n'))
     appendFileSync(fullpath, fieldArrayState.concat('\n\n'))
     appendFileSync(fullpath, buildStreamsForFieldArray(ctx).concat('\n\n'))

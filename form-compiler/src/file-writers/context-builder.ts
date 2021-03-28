@@ -6,7 +6,7 @@ import { thingImports, reactImports } from '../templates';
 import { isObjectNode, isArrayOfFields, isTuple, isPrimitive } from '../utils';
 import { pathsXform, streamsXform, hooksXform } from '../xform';
 
-export const buildFileContexts = (buildpath: string, schemaFilename: string, baseInterface: string = null) => {
+export const buildFileContexts = (buildpath: string, schemaFilename: string, baseInterface: string | null = null) => {
     return (acc: IFileContext[], x: ASTItem) => {
         if (isObjectNode(x)) {
             const [ node, children ] = x as AST;

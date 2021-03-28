@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+      "module": "CommonJS",
+      "target": "es5",
+      "sourceMap": true,
+      "declaration": true,
+      "allowSyntheticDefaultImports": true,
+      "importHelpers": true,
+      "noUnusedParameters": true,
+      "preserveConstEnums": true,
+      "moduleResolution": "node",
+      "strictNullChecks": true,
+      "outDir": "bin/form-compiler"
+  },
+  "exclude": ["node_modules"],
+  "include": ["index.ts", "src/**/*.ts"]
+}
+

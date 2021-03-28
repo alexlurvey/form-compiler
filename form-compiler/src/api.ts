@@ -48,8 +48,8 @@ export type IBaseFileContext = {
     filename: FileName,
     directoryLevel: number,
     header: string,
-    libraryImports?: string[],
-    localImports?: IObjectOf<Set<string>>, // key is filename, value is a set of named exports
+    libraryImports: string[],
+    localImports: IObjectOf<Set<string>>, // key is filename, value is a set of named exports
 }
 
 export type IPathFileContext = {

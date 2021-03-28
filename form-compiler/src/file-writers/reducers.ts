@@ -8,7 +8,8 @@ const streamReducer = (init: IStreamFileContext) => {
     return reducer(() => init, (acc, _x) => {
         if (isStreamFileContext(acc)) {
             // add root node type to local imports
-            const set = acc.localImports[acc.schemaFilename] || new Set();
+            const set = acc?.localImports?.[acc.schemaFilename] ?? new Set<string>();
+            acc.localImports = acc.localImports ?? {};
             acc.localImports[acc.schemaFilename] = set.add(acc.rootNode.type);
         }
         return acc;

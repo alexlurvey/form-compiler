@@ -4,17 +4,30 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "parcel index.html -p 8080 --open"
+    "build-form": "form-compiler ITestForm.ts --out-dir . --interface Form",
+    "copy": "cross-env mkdir -p dist && cross-env cp index.html dist/",
+    "start": "yarn copy && webpack serve"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@thi.ng/paths": "^4.1.5",
+    "@thi.ng/rstream": "^5.0.3",
+    "@thi.ng/transducers": "^7.3.0",
+    "form-compiler": "workspace:form-compiler",
     "react": "^16.13.1",
-    "react-dom": "^16.13.1"
+    "react-dom": "^16.13.1",
+    "webpack": "^5.28.0",
+    "webpack-cli": "^4.6.0",
+    "webpack-dev-server": "^3.11.2"
   },
   "devDependencies": {
+    "@babel/core": "^7.13.13",
+    "@babel/preset-react": "^7.13.13",
+    "@babel/preset-typescript": "^7.13.0",
     "@types/react": "^16.9.34",
     "@types/react-dom": "^16.9.7",
-    "parcel-bundler": "^1.12.4"
+    "babel-loader": "^8.2.2",
+    "cross-env": "^7.0.3"
   }
 }

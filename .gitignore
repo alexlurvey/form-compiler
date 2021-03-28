@@ -1,10 +1,4 @@
-node_modules
-build
-test-app/node_modules
-test-app/.cache
-test-app/Form
-test-app/dist
-test-app/ITestForm.ts
+**/node_modules
 
 .yarn/*
 !.yarn/patches

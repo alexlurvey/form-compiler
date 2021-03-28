@@ -91,18 +91,18 @@ const gatherStreams: Transducer<ASTItem, ASTItem> = (rfn) =>
     ]
 
 const gatherDescendantStreamImports: Transducer<ASTItem, ASTItem> = (rfn) =>
-    <Reducer<any, ASTItem>>[
+    <Reducer<IStreamFileContext, ASTItem>>[
         () => rfn[0](),
         (acc) => rfn[1](acc),
-        (acc: IStreamFileContext, x) => {
+        (acc, x) => {
             const node: Field = isObjectNode(x) ? x[0]
                 : isArrayOfFields(x) ? x : null;
             if (node) {
                 const path = `${node.name}/streams`;
-                const set = acc.localImports[path] || new Set();
+                const set = acc.localImports?.[path] ?? new Set<string>();
                 const imports = [ node.name, `init${uppercaseFirstChar(node.name)}` ];
                 imports.forEach(i => set.add(i));
-                acc.localImports[path] = set;
+                acc.localImports![path] = set;
             }
             return rfn[2](acc, x);
         }

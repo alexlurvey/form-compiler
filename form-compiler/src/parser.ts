@@ -1,5 +1,4 @@
 import {
-    discard,
     oneOf,
     zeroOrMore,
     lit,
@@ -14,6 +13,9 @@ import {
     ALPHA_NUM,
     maybe,
     xform,
+    stringD,
+    litD,
+    oneOfD,
 } from '@thi.ng/parse';
 
 const typeName = oneOrMore(alt([
@@ -36,10 +38,10 @@ const field = collect(seq([
     WS0,
     xform(maybe(lit('?')), $ => ($!.result = $?.result !== '?', $)),
     WS0,
-    discard(lit(':')),
+    litD(':'),
     WS0,
     join(t),
-    discard(maybe(oneOf(',;'))),
+    oneOfD(',;'),
     WS0,
 ]))
 
@@ -47,52 +49,52 @@ const enumField = collect(seq([
     WS0,
     join(oneOrMore(ALPHA_NUM)),
     WS0,
-    discard(lit('=')),
+    litD('='),
     WS0,
     join(enumT), // TODO: expand options
-    discard(lit(',')),
+    litD(','),
 ]))
 
 const intfc = collect(seq([
     WS0,
-    discard(maybe(string('export'))),
+    stringD('export'),
     WS0,
-    discard(string('interface')),
+    stringD('interface'),
     WS1,
     join(typeName),
     WS1,
-    discard(lit('{')),
+    litD('{'),
     collect(zeroOrMore(field)),
-    discard(lit('}')),
+    litD('}'),
 ]))
 
 const typ = collect(seq([
     WS0,
-    discard(maybe(string('export'))),
+    stringD('export'),
     WS0,
-    discard(string('type')),
+    stringD('type'),
     WS1,
     join(typeName),
     WS0,
-    discard(lit('=')),
+    litD('='),
     WS0,
-    discard(maybe(lit('{'))),
+    litD('{'),
     collect(zeroOrMore(field)),
-    discard(maybe(oneOf('};')))
+    oneOfD('};')
 ]))
 
 const enm = collect(seq([
     WS0,
-    discard(maybe(string('export'))),
+    stringD('export'),
     WS0,
     string('enum'),
     WS1,
     join(typeName),
     WS0,
-    discard(lit('{')),
+    litD('{'),
     collect(zeroOrMore(enumField)),
     WS0,
-    discard(lit('}')),
+    litD('}'),
 ]))
 
 export const program = collect(zeroOrMore(alt([ typ, intfc, enm ])))
